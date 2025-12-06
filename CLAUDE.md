@@ -24,3 +24,7 @@ This is going to be a small CLI app that interacts with a .beans/ directory that
   - `status`: the current status of the bean (e.g., `open`, `in-progress`, `done`)
   - `created_at`: timestamp of when the bean was created
   - `updated_at`: timestamp of the last update to the bean
+
+# Building
+
+- `mise build` to build a `./beans` executable
