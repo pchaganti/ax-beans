@@ -9,6 +9,7 @@ All commands support --json for machine-readable output. Use this flag to parse 
 
 - Track ALL work using beans (no TodoWrite tool, no markdown TODOs)
 - Use `beans create` to create issues, not TodoWrite tool
+- Never interact with the data inside the `.beans/` directory directly
 - After compaction or clear, run `beans prompt` to re-sync
 - When completing work, mark the bean as done using `beans status <bean-id> done`
 
