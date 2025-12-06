@@ -58,8 +58,17 @@ var listCmd = &cobra.Command{
 			return nil
 		}
 
-		// Column styles with fixed widths for alignment
-		idStyle := lipgloss.NewStyle().Width(10)
+		// Calculate max ID width
+		maxIDWidth := 2 // minimum for "ID" header
+		for _, b := range beans {
+			if len(b.ID) > maxIDWidth {
+				maxIDWidth = len(b.ID)
+			}
+		}
+		maxIDWidth += 2 // padding
+
+		// Column styles with widths for alignment
+		idStyle := lipgloss.NewStyle().Width(maxIDWidth)
 		statusStyle := lipgloss.NewStyle().Width(14)
 		titleStyle := lipgloss.NewStyle()
 
@@ -73,7 +82,7 @@ var listCmd = &cobra.Command{
 			titleStyle.Render(headerCol.Render("TITLE")),
 		)
 		fmt.Println(header)
-		fmt.Println(ui.Muted.Render(strings.Repeat("─", 60)))
+		fmt.Println(ui.Muted.Render(strings.Repeat("─", maxIDWidth+14+30)))
 
 		for _, b := range beans {
 			row := lipgloss.JoinHorizontal(lipgloss.Top,
