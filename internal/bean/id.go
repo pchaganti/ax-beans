@@ -10,7 +10,7 @@ import (
 
 const (
 	idAlphabet = "0123456789abcdefghijklmnopqrstuvwxyz"
-	idLength   = 8
+	idLength   = 3
 )
 
 // NewID generates a new NanoID for a bean.
