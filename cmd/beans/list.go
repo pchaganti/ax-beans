@@ -8,6 +8,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
 	"hmans.dev/beans/internal/bean"
+	"hmans.dev/beans/internal/config"
 	"hmans.dev/beans/internal/output"
 	"hmans.dev/beans/internal/ui"
 )
@@ -126,9 +127,9 @@ func sortBeans(beans []*bean.Bean, sortBy string) {
 			return beans[i].UpdatedAt.After(*beans[j].UpdatedAt)
 		})
 	case "status":
-		// Build status order from config
+		// Build status order from fixed statuses
 		statusOrder := make(map[string]int)
-		for i, s := range cfg.Statuses.Available {
+		for i, s := range config.ValidStatuses {
 			statusOrder[s] = i
 		}
 		sort.Slice(beans, func(i, j int) bool {

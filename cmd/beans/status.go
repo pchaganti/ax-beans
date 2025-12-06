@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	"hmans.dev/beans/internal/bean"
 	"hmans.dev/beans/internal/config"
 	"hmans.dev/beans/internal/output"
 	"hmans.dev/beans/internal/ui"
@@ -21,11 +20,11 @@ var statusCmd = &cobra.Command{
 		newStatus := args[1]
 
 		// Validate status
-		if !cfg.IsValidStatus(newStatus) {
+		if !config.IsValidStatus(newStatus) {
 			if statusJSON {
-				return output.Error(output.ErrInvalidStatus, fmt.Sprintf("invalid status: %s (must be %s)", newStatus, cfg.StatusList()))
+				return output.Error(output.ErrInvalidStatus, fmt.Sprintf("invalid status: %s (must be %s)", newStatus, config.StatusList()))
 			}
-			return fmt.Errorf("invalid status: %s (must be %s)", newStatus, cfg.StatusList())
+			return fmt.Errorf("invalid status: %s (must be %s)", newStatus, config.StatusList())
 		}
 
 		// Find the bean
@@ -62,16 +61,9 @@ var statusCmd = &cobra.Command{
 }
 
 func init() {
-	// Set dynamic help text based on config
-	statusList := config.Default().StatusList()
-	if root, err := bean.FindRoot(); err == nil {
-		if c, err := config.Load(root); err == nil {
-			statusList = c.StatusList()
-		}
-	}
 	statusCmd.Long = fmt.Sprintf(`Changes the status of a bean.
 
-Valid statuses: %s`, statusList)
+Valid statuses: %s`, config.StatusList())
 
 	statusCmd.Flags().BoolVar(&statusJSON, "json", false, "Output as JSON")
 	rootCmd.AddCommand(statusCmd)

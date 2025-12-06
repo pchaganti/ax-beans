@@ -3,16 +3,22 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/pelletier/go-toml/v2"
 )
 
 const ConfigFile = "beans.toml"
 
+// ValidStatuses defines the fixed set of allowed status values.
+var ValidStatuses = []string{"open", "in-progress", "done"}
+
+// DefaultStatus is the status assigned to new beans when not specified.
+const DefaultStatus = "open"
+
 // Config holds the beans configuration.
 type Config struct {
-	Beans    BeansConfig  `toml:"beans"`
-	Statuses StatusConfig `toml:"statuses"`
+	Beans BeansConfig `toml:"beans"`
 }
 
 // BeansConfig defines settings for bean creation.
@@ -21,22 +27,12 @@ type BeansConfig struct {
 	IDLength int    `toml:"id_length"`
 }
 
-// StatusConfig defines available statuses and the default.
-type StatusConfig struct {
-	Available []string `toml:"available"`
-	Default   string   `toml:"default"`
-}
-
 // Default returns a Config with default values.
 func Default() *Config {
 	return &Config{
 		Beans: BeansConfig{
 			Prefix:   "",
 			IDLength: 4,
-		},
-		Statuses: StatusConfig{
-			Available: []string{"open", "in-progress", "done"},
-			Default:   "open",
 		},
 	}
 }
@@ -86,9 +82,9 @@ func (c *Config) Save(root string) error {
 	return os.WriteFile(path, data, 0644)
 }
 
-// IsValidStatus returns true if the status is in the available list.
-func (c *Config) IsValidStatus(status string) bool {
-	for _, s := range c.Statuses.Available {
+// IsValidStatus returns true if the status is in the allowed list.
+func IsValidStatus(status string) bool {
+	for _, s := range ValidStatuses {
 		if s == status {
 			return true
 		}
@@ -96,15 +92,7 @@ func (c *Config) IsValidStatus(status string) bool {
 	return false
 }
 
-// StatusList returns a comma-separated list of available statuses.
-func (c *Config) StatusList() string {
-	if len(c.Statuses.Available) == 0 {
-		return ""
-	}
-
-	result := c.Statuses.Available[0]
-	for i := 1; i < len(c.Statuses.Available); i++ {
-		result += ", " + c.Statuses.Available[i]
-	}
-	return result
+// StatusList returns a comma-separated list of valid statuses.
+func StatusList() string {
+	return strings.Join(ValidStatuses, ", ")
 }
