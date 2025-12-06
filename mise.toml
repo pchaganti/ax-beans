@@ -3,3 +3,7 @@ go = "latest"
 
 [tasks.build]
 run = "go build ."
+
+[tasks.install]
+depends = "build"
+run = "cp beans ~/.local/bin/beans"
