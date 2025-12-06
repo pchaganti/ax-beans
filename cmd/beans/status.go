@@ -4,6 +4,8 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"hmans.dev/beans/internal/bean"
+	"hmans.dev/beans/internal/config"
 	"hmans.dev/beans/internal/output"
 	"hmans.dev/beans/internal/ui"
 )
@@ -13,20 +15,17 @@ var statusJSON bool
 var statusCmd = &cobra.Command{
 	Use:   "status <id> <status>",
 	Short: "Change a bean's status",
-	Long: `Changes the status of a bean.
-
-Valid statuses: open, in-progress, done`,
-	Args: cobra.ExactArgs(2),
+	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		id := args[0]
 		newStatus := args[1]
 
 		// Validate status
-		if !validStatuses[newStatus] {
+		if !cfg.IsValidStatus(newStatus) {
 			if statusJSON {
-				return output.Error(output.ErrInvalidStatus, fmt.Sprintf("invalid status: %s (must be open, in-progress, or done)", newStatus))
+				return output.Error(output.ErrInvalidStatus, fmt.Sprintf("invalid status: %s (must be %s)", newStatus, cfg.StatusList()))
 			}
-			return fmt.Errorf("invalid status: %s (must be open, in-progress, or done)", newStatus)
+			return fmt.Errorf("invalid status: %s (must be %s)", newStatus, cfg.StatusList())
 		}
 
 		// Find the bean
@@ -63,6 +62,17 @@ Valid statuses: open, in-progress, done`,
 }
 
 func init() {
+	// Set dynamic help text based on config
+	statusList := config.Default().StatusList()
+	if root, err := bean.FindRoot(); err == nil {
+		if c, err := config.Load(root); err == nil {
+			statusList = c.StatusList()
+		}
+	}
+	statusCmd.Long = fmt.Sprintf(`Changes the status of a bean.
+
+Valid statuses: %s`, statusList)
+
 	statusCmd.Flags().BoolVar(&statusJSON, "json", false, "Output as JSON")
 	rootCmd.AddCommand(statusCmd)
 }
