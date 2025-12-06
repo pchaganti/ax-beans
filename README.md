@@ -8,9 +8,10 @@ You've been programming all your life; now you get to be a product manager. Let'
 
 ## Features
 
-- Beans are just Markdown files stored in a `.beans/` directory in your project. View and edit them directly if you want!
-- Use the `beans` CLI to create, list, view, update, and archive beans; or let your coding agent do it for you!
-- All CLI commands have optional `--json` output for accurate machine readability. Your agent will love it.
+- Track tasks, bugs, features, and more right alongside your code.
+- Plain old Markdown files stored in a `.beans/` directory in your project. View and edit them directly if you want!
+- Use the `beans` CLI to create, list, view, update, and archive beans; but more importantly, let your coding agent do it for you!
+- Supercharge your robot friend with full context about your project and its open tasks.
 
 This project was inspired by Steve Yegge's great [Beads](https://github.com/steveyegge/beads). The main differences:
 
