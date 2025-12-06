@@ -6,6 +6,8 @@ This gives your robot friends a juicy upgrade: now they get a complete view of y
 
 You've been programming all your life; now you get to be a product manager. Let's go! 🚀
 
+> **Warning**: This project is in a very early state. There **will** be breaking changes. Use at your own risk!
+
 ## Features
 
 - Track tasks, bugs, features, and more right alongside your code.
