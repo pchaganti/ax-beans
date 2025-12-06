@@ -1,10 +1,14 @@
 package beans
 
 import (
+	_ "embed"
 	"fmt"
 
 	"github.com/spf13/cobra"
 )
+
+//go:embed agent_prompt.md
+var agentPrompt string
 
 var promptCmd = &cobra.Command{
 	Use:   "prompt",
@@ -16,21 +20,6 @@ var promptCmd = &cobra.Command{
 		return nil
 	},
 }
-
-const agentPrompt = `# Beans - Agentic Issue Tracker
-
-This project uses **beans**, an agentic-first issue tracker. Issues are called "beans", and you can
-use the "beans" CLI to manage them. Below are instructions on how to interact with beans.
-
-All commands support --json for machine-readable output. Use this flag to parse responses easily.
-
-### List available beans
-
-To list all beans, use:
-
-    beans list --json
-
-`
 
 func init() {
 	rootCmd.AddCommand(promptCmd)
