@@ -1,7 +1,11 @@
 ---
 title: Add created_at and updated_at timestamps
-status: in-progress
+status: done
+created_at: 2025-12-06T14:17:41.524335Z
+updated_at: 2025-12-06T14:19:33.246786Z
 ---
+
+
 
 
 Add automatic timestamp tracking to beans via `created_at` and `updated_at` front matter fields.
