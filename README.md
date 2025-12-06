@@ -1,4 +1,4 @@
-# Beans
+<img alt="BEANS" src="https://github.com/user-attachments/assets/0838ea76-d7ce-4716-ac97-e52c8cf11fca" style="margin-bottom: 2rem" />
 
 Beans is an issue tracker for you, your team, and your coding agents. Instead of tracking tasks in a separate application, Beans stores them right alongside your code. You can use the `beans` CLI to interact with your tasks, but more importantly, so can your favorite coding agent!
 
