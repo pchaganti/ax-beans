@@ -1,6 +1,6 @@
 [beans]
-prefix = ""
+prefix = 'beans-'
 
 [statuses]
-available = ["open", "in-progress", "done"]
-default = "open"
+available = ['open', 'in-progress', 'done']
+default = 'open'
