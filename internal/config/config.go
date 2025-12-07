@@ -19,11 +19,11 @@ var DefaultStatuses = []StatusConfig{
 
 // DefaultTypes defines the default type configuration.
 var DefaultTypes = []TypeConfig{
-	{Name: "idea", Color: "yellow"},
-	{Name: "epic", Color: "purple"},
-	{Name: "bug", Color: "red"},
-	{Name: "feature", Color: "green"},
-	{Name: "task", Color: "blue"},
+	{Name: "idea", Color: "yellow", Description: "A concept or suggestion to explore later"},
+	{Name: "epic", Color: "purple", Description: "A large initiative containing multiple related tasks"},
+	{Name: "bug", Color: "red", Description: "Something that is broken and needs fixing"},
+	{Name: "feature", Color: "green", Description: "A new capability or enhancement to add"},
+	{Name: "task", Color: "blue", Description: "A concrete piece of work that needs to be done"},
 }
 
 // StatusConfig defines a single status with its display color.
@@ -35,8 +35,9 @@ type StatusConfig struct {
 
 // TypeConfig defines a single bean type with its display color.
 type TypeConfig struct {
-	Name  string `yaml:"name"`
-	Color string `yaml:"color"`
+	Name        string `yaml:"name"`
+	Color       string `yaml:"color"`
+	Description string `yaml:"description,omitempty"`
 }
 
 // Config holds the beans configuration.

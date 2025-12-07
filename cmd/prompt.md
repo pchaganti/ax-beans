@@ -84,7 +84,7 @@ Use `--no-status` to exclude beans with specific statuses:
 
 - `beans create --help`
 - Example: `beans create "Fix login bug" -t bug -d "Users cannot log in when..." -s open --no-edit`
-- **Always specify a type with `-t`**. Check `.beans/config.yaml` to see what types are configured for the project, and choose the most appropriate one for the work being done.
+- **Always specify a type with `-t`**. Check `.beans/config.yaml` to see what types are configured for the project. Each type has a description explaining when to use it - choose the most appropriate one based on these descriptions.
 - When creating new beans, include a useful description. If you're not sure what to write, ask the user.
 - Make the description as detailed as possible, similar to a plan that you would create for yourself.
 - If possible, split the work into a checklist of GitHub-Formatted-Markdown tasks. Use a `## Checklist` header to precede it.
@@ -144,10 +144,14 @@ statuses:
 types:
   - name: task
     color: blue
+    description: A concrete piece of work that needs to be done
   - name: feature
     color: green
+    description: A new capability or enhancement to add
   - name: bug
     color: red
+    description: Something that is broken and needs fixing
 ```
 
 Colors can be named (`green`, `yellow`, `red`, `gray`, `blue`, `purple`) or hex codes (`#FF6B6B`).
+Type descriptions help agents understand when to use each type.

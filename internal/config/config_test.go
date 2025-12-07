@@ -394,3 +394,97 @@ func TestTypesConfig(t *testing.T) {
 		t.Errorf("Types[0] = %+v, want {Name:bug Color:red}", loaded.Types[0])
 	}
 }
+
+func TestTypeDescriptions(t *testing.T) {
+	t.Run("default types have descriptions", func(t *testing.T) {
+		cfg := Default()
+
+		expectedDescriptions := map[string]string{
+			"idea":    "A concept or suggestion to explore later",
+			"epic":    "A large initiative containing multiple related tasks",
+			"bug":     "Something that is broken and needs fixing",
+			"feature": "A new capability or enhancement to add",
+			"task":    "A concrete piece of work that needs to be done",
+		}
+
+		for typeName, expectedDesc := range expectedDescriptions {
+			typ := cfg.GetType(typeName)
+			if typ == nil {
+				t.Errorf("GetType(%q) = nil, want non-nil", typeName)
+				continue
+			}
+			if typ.Description != expectedDesc {
+				t.Errorf("Type %q description = %q, want %q", typeName, typ.Description, expectedDesc)
+			}
+		}
+	})
+
+	t.Run("save and load preserves descriptions", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		cfg := &Config{
+			Beans: BeansConfig{
+				Prefix:        "test-",
+				IDLength:      4,
+				DefaultStatus: "open",
+			},
+			Statuses: DefaultStatuses,
+			Types: []TypeConfig{
+				{Name: "bug", Color: "red", Description: "Something broken"},
+				{Name: "feature", Color: "green", Description: "New functionality"},
+			},
+		}
+
+		if err := cfg.Save(tmpDir); err != nil {
+			t.Fatalf("Save() error = %v", err)
+		}
+
+		loaded, err := Load(tmpDir)
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+
+		if loaded.Types[0].Description != "Something broken" {
+			t.Errorf("Types[0].Description = %q, want \"Something broken\"", loaded.Types[0].Description)
+		}
+		if loaded.Types[1].Description != "New functionality" {
+			t.Errorf("Types[1].Description = %q, want \"New functionality\"", loaded.Types[1].Description)
+		}
+	})
+
+	t.Run("description is optional", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ConfigFile)
+
+		// Config without descriptions (backwards compatibility)
+		configYAML := `beans:
+  prefix: "test-"
+  id_length: 4
+  default_status: open
+statuses:
+  - name: open
+    color: green
+types:
+  - name: bug
+    color: red
+  - name: feature
+    color: green
+`
+		if err := os.WriteFile(configPath, []byte(configYAML), 0644); err != nil {
+			t.Fatalf("WriteFile error = %v", err)
+		}
+
+		loaded, err := Load(tmpDir)
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+
+		// Should load without error, descriptions should be empty
+		if loaded.Types[0].Description != "" {
+			t.Errorf("Types[0].Description = %q, want empty", loaded.Types[0].Description)
+		}
+		if loaded.Types[1].Description != "" {
+			t.Errorf("Types[1].Description = %q, want empty", loaded.Types[1].Description)
+		}
+	})
+}
