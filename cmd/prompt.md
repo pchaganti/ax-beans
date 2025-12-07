@@ -90,6 +90,7 @@ Use `--no-status` to exclude beans with specific statuses:
 - `beans create --help`
 - Example: `beans create "Fix login bug" -t bug -d "Users cannot log in when..." -s open`
 - **Always specify a type with `-t`**. See the "Issue Types" section below for available types and their descriptions.
+- When creating a new bean, first see if a similar bean already exists.
 - When creating new beans, include a useful description. If you're not sure what to write, ask the user.
 - Make the description as detailed as possible, similar to a plan that you would create for yourself.
 - If possible, split the work into a checklist of GitHub-Formatted-Markdown tasks. Use a `## Checklist` header to precede it.
