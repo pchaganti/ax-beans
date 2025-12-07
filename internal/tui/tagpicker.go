@@ -33,15 +33,13 @@ func (d tagItemDelegate) Render(w io.Writer, m list.Model, index int, listItem l
 	}
 
 	var cursor string
-	tagStyle := lipgloss.NewStyle().Foreground(ui.ColorPrimary)
 	if index == m.Index() {
 		cursor = lipgloss.NewStyle().Foreground(ui.ColorPrimary).Bold(true).Render("▌") + " "
-		tagStyle = tagStyle.Bold(true)
 	} else {
 		cursor = "  "
 	}
 
-	fmt.Fprint(w, cursor+tagStyle.Render(item.tag))
+	fmt.Fprint(w, cursor+ui.RenderTag(item.tag))
 }
 
 // tagPickerModel is the model for the tag picker view

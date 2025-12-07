@@ -149,7 +149,7 @@ var listCmd = &cobra.Command{
 		idStyle := lipgloss.NewStyle().Width(maxIDWidth)
 		statusStyle := lipgloss.NewStyle().Width(14)
 		typeStyle := lipgloss.NewStyle().Width(12)
-		tagsStyle := lipgloss.NewStyle().Width(20)
+		tagsStyle := lipgloss.NewStyle().Width(24)
 		titleStyle := lipgloss.NewStyle()
 
 		// Header style
@@ -196,12 +196,12 @@ var listCmd = &cobra.Command{
 
 			var row string
 			if hasTags {
-				tagsStr := truncate(strings.Join(b.Tags, ", "), 18)
+				tagsStr := ui.RenderTagsCompact(b.Tags, 1)
 				row = lipgloss.JoinHorizontal(lipgloss.Top,
 					idStyle.Render(ui.ID.Render(b.ID)),
 					statusStyle.Render(ui.RenderStatusTextWithColor(b.Status, statusColor, isArchive)),
 					typeStyle.Render(ui.RenderTypeText(b.Type, typeColor)),
-					tagsStyle.Render(ui.Muted.Render(tagsStr)),
+					tagsStyle.Render(tagsStr),
 					titleStyle.Render(truncate(b.Title, 50)),
 				)
 			} else {

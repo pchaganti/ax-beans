@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,6 +15,23 @@ import (
 	"hmans.dev/beans/internal/config"
 	"hmans.dev/beans/internal/ui"
 )
+
+// Cached glamour renderer - initialized once per width
+var (
+	glamourRenderer     *glamour.TermRenderer
+	glamourRendererOnce sync.Once
+)
+
+func getGlamourRenderer() *glamour.TermRenderer {
+	glamourRendererOnce.Do(func() {
+		var err error
+		glamourRenderer, err = glamour.NewTermRenderer(glamour.WithAutoStyle())
+		if err != nil {
+			glamourRenderer = nil
+		}
+	})
+	return glamourRenderer
+}
 
 // backToListMsg signals navigation back to the list
 type backToListMsg struct{}
@@ -239,9 +257,8 @@ func (m detailModel) renderHeader() string {
 
 	// Add tags if present
 	if len(m.bean.Tags) > 0 {
-		tagsStr := strings.Join(m.bean.Tags, ", ")
 		headerContent.WriteString("  ")
-		headerContent.WriteString(ui.Muted.Render(tagsStr))
+		headerContent.WriteString(ui.RenderTags(m.bean.Tags))
 	}
 
 	// Add relationships section if there are any
@@ -480,16 +497,13 @@ func (m detailModel) resolveIncomingLinks(allBeans []*bean.Bean) []resolvedLink 
 	return links
 }
 
-func (m detailModel) renderBody(width int) string {
+func (m detailModel) renderBody(_ int) string {
 	if m.bean.Body == "" {
 		return lipgloss.NewStyle().Foreground(ui.ColorMuted).Italic(true).Render("No description")
 	}
 
-	renderer, err := glamour.NewTermRenderer(
-		glamour.WithAutoStyle(),
-		glamour.WithWordWrap(width-4),
-	)
-	if err != nil {
+	renderer := getGlamourRenderer()
+	if renderer == nil {
 		return m.bean.Body
 	}
 

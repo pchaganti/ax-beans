@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -77,6 +78,64 @@ var (
 	StatusDoneText       = lipgloss.NewStyle().Foreground(ColorSecondary)
 	StatusInProgressText = lipgloss.NewStyle().Foreground(ColorWarning).Bold(true)
 )
+
+// Tag badge style - black text on gray background
+var TagBadge = lipgloss.NewStyle().
+	Foreground(lipgloss.Color("#000")).
+	Background(ColorMuted).
+	Padding(0, 1)
+
+// RenderTag renders a single tag as a badge
+func RenderTag(tag string) string {
+	return TagBadge.Render(tag)
+}
+
+// RenderTags renders multiple tags as badges separated by spaces
+func RenderTags(tags []string) string {
+	if len(tags) == 0 {
+		return ""
+	}
+	rendered := make([]string, len(tags))
+	for i, tag := range tags {
+		rendered[i] = RenderTag(tag)
+	}
+	return strings.Join(rendered, " ")
+}
+
+// RenderTagsCompact renders tags for list views with a max count.
+// Shows up to maxTags badges, with "+N" indicator if there are more.
+// Tags longer than 12 chars are truncated.
+func RenderTagsCompact(tags []string, maxTags int) string {
+	if len(tags) == 0 {
+		return ""
+	}
+	if maxTags <= 0 {
+		maxTags = 1
+	}
+
+	showTags := tags
+	var extra int
+	if len(tags) > maxTags {
+		showTags = tags[:maxTags]
+		extra = len(tags) - maxTags
+	}
+
+	rendered := make([]string, len(showTags))
+	for i, tag := range showTags {
+		// Truncate long tags
+		displayTag := tag
+		if len(displayTag) > 12 {
+			displayTag = displayTag[:10] + ".."
+		}
+		rendered[i] = RenderTag(displayTag)
+	}
+
+	result := strings.Join(rendered, " ")
+	if extra > 0 {
+		result += Muted.Render(fmt.Sprintf(" +%d", extra))
+	}
+	return result
+}
 
 // Text styles
 var (
@@ -191,7 +250,7 @@ const (
 	ColWidthID     = 12
 	ColWidthStatus = 14
 	ColWidthType   = 12
-	ColWidthTags   = 18
+	ColWidthTags   = 24
 )
 
 // RenderBeanRow renders a bean as a single row with ID, Type, Status, Tags (optional), Title
@@ -216,14 +275,7 @@ func RenderBeanRow(id, status, typeName, title string, cfg BeanRowConfig) string
 	// Tags column (optional)
 	var tagsCol string
 	if cfg.ShowTags {
-		tagsText := ""
-		if len(cfg.Tags) > 0 {
-			tagsText = strings.Join(cfg.Tags, ", ")
-			if len(tagsText) > ColWidthTags-2 {
-				tagsText = tagsText[:ColWidthTags-5] + "..."
-			}
-		}
-		tagsCol = tagsStyle.Render(Muted.Render(tagsText))
+		tagsCol = tagsStyle.Render(RenderTagsCompact(cfg.Tags, 1))
 	}
 
 	// Title (truncate if needed)
