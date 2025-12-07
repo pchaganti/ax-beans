@@ -199,6 +199,21 @@ func TestApplyTags(t *testing.T) {
 	}
 }
 
+func TestApplyLinks_SelfReference(t *testing.T) {
+	b := &bean.Bean{ID: "abc123"}
+
+	_, err := applyLinks(b, []string{"blocks:abc123"})
+	if err == nil {
+		t.Error("applyLinks() expected error for self-reference, got nil")
+		return
+	}
+
+	expected := "bean cannot link to itself"
+	if err.Error() != expected {
+		t.Errorf("applyLinks() error = %q, want %q", err.Error(), expected)
+	}
+}
+
 func TestRemoveLinks(t *testing.T) {
 	tests := []struct {
 		name      string

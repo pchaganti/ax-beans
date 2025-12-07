@@ -80,6 +80,10 @@ func applyLinks(b *bean.Bean, links []string) (warnings []string, err error) {
 		if !isKnownLinkType(linkType) {
 			return nil, fmt.Errorf("unknown link type: %s (must be %s)", linkType, strings.Join(beancore.KnownLinkTypes, ", "))
 		}
+		// Check for self-reference
+		if targetID == b.ID {
+			return nil, fmt.Errorf("bean cannot link to itself")
+		}
 		// Check if target bean exists
 		if _, err := core.Get(targetID); err != nil {
 			warnings = append(warnings, fmt.Sprintf("target bean '%s' does not exist", targetID))
