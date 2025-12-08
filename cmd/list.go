@@ -17,6 +17,8 @@ var (
 	listJSON       bool
 	listStatus     []string
 	listNoStatus   []string
+	listType       []string
+	listNoType     []string
 	listLinks      []string
 	listLinkedAs   []string
 	listNoLinks    []string
@@ -93,6 +95,8 @@ var listCmd = &cobra.Command{
 		// Apply filters (positive first, then exclusions)
 		beans = filterBeans(beans, listStatus)
 		beans = excludeByStatus(beans, listNoStatus)
+		beans = filterByType(beans, listType)
+		beans = excludeByType(beans, listNoType)
 		beans = filterByLinks(beans, linksFilters)
 		beans = filterByLinkedAs(beans, linkedAsFilters, idx)
 		beans = excludeByLinks(beans, noLinksFilters)
@@ -343,6 +347,46 @@ func excludeByStatus(beans []*bean.Bean, statuses []string) []*bean.Bean {
 	return filtered
 }
 
+// filterByType filters beans that match any of the given types (OR logic).
+func filterByType(beans []*bean.Bean, types []string) []*bean.Bean {
+	if len(types) == 0 {
+		return beans
+	}
+
+	var filtered []*bean.Bean
+	for _, b := range beans {
+		for _, t := range types {
+			if b.Type == t {
+				filtered = append(filtered, b)
+				break
+			}
+		}
+	}
+	return filtered
+}
+
+// excludeByType excludes beans that match any of the given types.
+func excludeByType(beans []*bean.Bean, types []string) []*bean.Bean {
+	if len(types) == 0 {
+		return beans
+	}
+
+	var filtered []*bean.Bean
+	for _, b := range beans {
+		excluded := false
+		for _, t := range types {
+			if b.Type == t {
+				excluded = true
+				break
+			}
+		}
+		if !excluded {
+			filtered = append(filtered, b)
+		}
+	}
+	return filtered
+}
+
 // filterByLinks filters beans by outgoing relationship.
 // Supports two formats:
 //   - "type:id" - Returns beans that have id in their links[type]
@@ -558,6 +602,8 @@ func init() {
 	listCmd.Flags().BoolVar(&listJSON, "json", false, "Output as JSON")
 	listCmd.Flags().StringArrayVarP(&listStatus, "status", "s", nil, "Filter by status (can be repeated)")
 	listCmd.Flags().StringArrayVar(&listNoStatus, "no-status", nil, "Exclude by status (can be repeated)")
+	listCmd.Flags().StringArrayVarP(&listType, "type", "t", nil, "Filter by type (can be repeated)")
+	listCmd.Flags().StringArrayVar(&listNoType, "no-type", nil, "Exclude by type (can be repeated)")
 	listCmd.Flags().StringArrayVar(&listLinks, "links", nil, "Filter by outgoing relationship (format: type or type:id)")
 	listCmd.Flags().StringArrayVar(&listLinkedAs, "linked-as", nil, "Filter by incoming relationship (format: type or type:id)")
 	listCmd.Flags().StringArrayVar(&listNoLinks, "no-links", nil, "Exclude beans with outgoing relationship (format: type or type:id)")

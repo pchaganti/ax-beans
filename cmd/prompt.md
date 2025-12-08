@@ -85,6 +85,15 @@ Use `--no-status` to exclude beans with specific statuses:
 - `beans list --no-status done --no-status archived` - Exclude multiple statuses
 - `beans list --no-status done --no-linked-as blocks` - Actionable beans (not done, not blocked)
 
+**Filtering by type:**
+
+Use `-t/--type` to filter by bean type (OR logic when repeated):
+
+- `beans list -t bug` - Show only bugs
+- `beans list -t bug -t feature` - Show bugs OR features
+- `beans list --no-type epic` - Exclude epics
+- `beans list -t task --no-status done` - Show open tasks
+
 ## Creating new beans
 
 - `beans create --help`
