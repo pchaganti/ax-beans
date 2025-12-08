@@ -20,8 +20,8 @@ var rootCmd = &cobra.Command{
 Track your work alongside your code and supercharge your coding agent with
 a full view of your project.`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		// Skip core initialization for init command
-		if cmd.Name() == "init" {
+		// Skip core initialization for init and prompt commands
+		if cmd.Name() == "init" || cmd.Name() == "prompt" {
 			return nil
 		}
 

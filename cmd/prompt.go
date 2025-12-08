@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"hmans.dev/beans/internal/beancore"
+	"hmans.dev/beans/internal/config"
 )
 
 //go:embed prompt.md
@@ -17,6 +19,26 @@ var promptCmd = &cobra.Command{
 	Long:  `Outputs a prompt that instructs AI coding agents on how to use the beans CLI to manage project issues.`,
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// Find beans directory; silently exit if none exists
+		var root string
+		var err error
+
+		if beansPath != "" {
+			root = beansPath
+		} else {
+			root, err = beancore.FindRoot()
+			if err != nil {
+				// No .beans directory found - silently exit
+				return nil
+			}
+		}
+
+		// Load config for dynamic sections
+		cfg, err := config.Load(root)
+		if err != nil {
+			return fmt.Errorf("loading config: %w", err)
+		}
+
 		fmt.Print(agentPrompt)
 
 		// Append dynamic sections from config
