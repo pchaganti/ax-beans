@@ -95,7 +95,7 @@ func TestCreate(t *testing.T) {
 		ID:     "abc1",
 		Slug:   "test-bean",
 		Title:  "Test Bean",
-		Status: "open",
+		Status: "todo",
 		Body:   "Some content here.",
 	}
 
@@ -135,7 +135,7 @@ func TestCreateGeneratesID(t *testing.T) {
 
 	b := &bean.Bean{
 		Title:  "Auto ID Bean",
-		Status: "open",
+		Status: "todo",
 	}
 
 	err := core.Create(b)
@@ -154,9 +154,9 @@ func TestCreateGeneratesID(t *testing.T) {
 func TestAll(t *testing.T) {
 	core, _ := setupTestCore(t)
 
-	createTestBean(t, core, "aaa1", "First Bean", "open")
+	createTestBean(t, core, "aaa1", "First Bean", "todo")
 	createTestBean(t, core, "bbb2", "Second Bean", "in-progress")
-	createTestBean(t, core, "ccc3", "Third Bean", "done")
+	createTestBean(t, core, "ccc3", "Third Bean", "completed")
 
 	beans := core.All()
 	if len(beans) != 3 {
@@ -176,9 +176,9 @@ func TestAllEmpty(t *testing.T) {
 func TestGet(t *testing.T) {
 	core, _ := setupTestCore(t)
 
-	createTestBean(t, core, "abc1", "First", "open")
-	createTestBean(t, core, "def2", "Second", "open")
-	createTestBean(t, core, "ghi3", "Third", "open")
+	createTestBean(t, core, "abc1", "First", "todo")
+	createTestBean(t, core, "def2", "Second", "todo")
+	createTestBean(t, core, "ghi3", "Third", "todo")
 
 	t.Run("exact match", func(t *testing.T) {
 		b, err := core.Get("abc1")
@@ -214,7 +214,7 @@ func TestGet(t *testing.T) {
 func TestGetNotFound(t *testing.T) {
 	core, _ := setupTestCore(t)
 
-	createTestBean(t, core, "abc1", "Test", "open")
+	createTestBean(t, core, "abc1", "Test", "todo")
 
 	_, err := core.Get("xyz")
 	if err != ErrNotFound {
@@ -225,8 +225,8 @@ func TestGetNotFound(t *testing.T) {
 func TestGetAmbiguous(t *testing.T) {
 	core, _ := setupTestCore(t)
 
-	createTestBean(t, core, "abc1", "First", "open")
-	createTestBean(t, core, "abc2", "Second", "open")
+	createTestBean(t, core, "abc1", "First", "todo")
+	createTestBean(t, core, "abc2", "Second", "todo")
 
 	_, err := core.Get("abc")
 	if err != ErrAmbiguousID {
@@ -237,7 +237,7 @@ func TestGetAmbiguous(t *testing.T) {
 func TestUpdate(t *testing.T) {
 	core, _ := setupTestCore(t)
 
-	b := createTestBean(t, core, "upd1", "Original Title", "open")
+	b := createTestBean(t, core, "upd1", "Original Title", "todo")
 	originalCreatedAt := *b.CreatedAt
 
 	// Update the bean
@@ -278,7 +278,7 @@ func TestUpdateNotFound(t *testing.T) {
 	b := &bean.Bean{
 		ID:     "nonexistent",
 		Title:  "Ghost Bean",
-		Status: "open",
+		Status: "todo",
 	}
 
 	err := core.Update(b)
@@ -290,7 +290,7 @@ func TestUpdateNotFound(t *testing.T) {
 func TestDelete(t *testing.T) {
 	core, beansDir := setupTestCore(t)
 
-	b := createTestBean(t, core, "del1", "To Delete", "open")
+	b := createTestBean(t, core, "del1", "To Delete", "todo")
 	filePath := filepath.Join(beansDir, b.Path)
 
 	// Verify file exists
@@ -328,7 +328,7 @@ func TestDeleteNotFound(t *testing.T) {
 func TestDeleteByPrefix(t *testing.T) {
 	core, _ := setupTestCore(t)
 
-	createTestBean(t, core, "unique123", "Test", "open")
+	createTestBean(t, core, "unique123", "Test", "todo")
 
 	// Delete by prefix
 	err := core.Delete("unique")
@@ -392,7 +392,7 @@ Manual content.
 func TestLoadIgnoresNonMdFiles(t *testing.T) {
 	core, beansDir := setupTestCore(t)
 
-	createTestBean(t, core, "abc1", "Real Bean", "open")
+	createTestBean(t, core, "abc1", "Real Bean", "todo")
 
 	// Create non-.md files that should be ignored
 	os.WriteFile(filepath.Join(beansDir, "config.yaml"), []byte("config"), 0644)
@@ -418,7 +418,7 @@ func TestLinksPreserved(t *testing.T) {
 		ID:     "aaa1",
 		Slug:   "blocker",
 		Title:  "Blocker Bean",
-		Status: "open",
+		Status: "todo",
 		Links: bean.Links{
 			{Type: "blocks", Target: "bbb2"},
 		},
@@ -432,7 +432,7 @@ func TestLinksPreserved(t *testing.T) {
 		ID:     "bbb2",
 		Slug:   "blocked",
 		Title:  "Blocked Bean",
-		Status: "open",
+		Status: "todo",
 	}
 	if err := core.Create(beanB); err != nil {
 		t.Fatalf("Create beanB error = %v", err)
@@ -469,7 +469,7 @@ func TestConcurrentAccess(t *testing.T) {
 
 	// Create some initial beans
 	for i := 0; i < 10; i++ {
-		createTestBean(t, core, bean.NewID("", 4), "Initial Bean", "open")
+		createTestBean(t, core, bean.NewID("", 4), "Initial Bean", "todo")
 	}
 
 	// Run concurrent operations
@@ -495,7 +495,7 @@ func TestConcurrentAccess(t *testing.T) {
 			for j := 0; j < 10; j++ {
 				b := &bean.Bean{
 					Title:  "Concurrent Bean",
-					Status: "open",
+					Status: "todo",
 				}
 				if err := core.Create(b); err != nil {
 					errors <- err
@@ -515,7 +515,7 @@ func TestConcurrentAccess(t *testing.T) {
 func TestWatch(t *testing.T) {
 	core, beansDir := setupTestCore(t)
 
-	createTestBean(t, core, "wat1", "Initial Bean", "open")
+	createTestBean(t, core, "wat1", "Initial Bean", "todo")
 
 	// Start watching
 	changeCount := 0
@@ -569,7 +569,7 @@ status: open
 func TestWatchDeletedBean(t *testing.T) {
 	core, beansDir := setupTestCore(t)
 
-	b := createTestBean(t, core, "del1", "To Delete", "open")
+	b := createTestBean(t, core, "del1", "To Delete", "todo")
 
 	// Start watching
 	changed := make(chan struct{}, 1)

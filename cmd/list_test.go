@@ -11,10 +11,10 @@ import (
 func TestFilterBeans(t *testing.T) {
 	// Create test beans
 	beans := []*bean.Bean{
-		{ID: "a1", Status: "open"},
+		{ID: "a1", Status: "todo"},
 		{ID: "b2", Status: "in-progress"},
-		{ID: "c3", Status: "done"},
-		{ID: "d4", Status: "open"},
+		{ID: "c3", Status: "completed"},
+		{ID: "d4", Status: "todo"},
 		{ID: "e5", Status: "in-progress"},
 	}
 
@@ -35,8 +35,8 @@ func TestFilterBeans(t *testing.T) {
 			wantCount: 5,
 		},
 		{
-			name:      "filter open",
-			statuses:  []string{"open"},
+			name:      "filter todo",
+			statuses:  []string{"todo"},
 			wantCount: 2,
 			wantIDs:   []string{"a1", "d4"},
 		},
@@ -47,14 +47,14 @@ func TestFilterBeans(t *testing.T) {
 			wantIDs:   []string{"b2", "e5"},
 		},
 		{
-			name:      "filter done",
-			statuses:  []string{"done"},
+			name:      "filter completed",
+			statuses:  []string{"completed"},
 			wantCount: 1,
 			wantIDs:   []string{"c3"},
 		},
 		{
 			name:      "multiple statuses",
-			statuses:  []string{"open", "done"},
+			statuses:  []string{"todo", "completed"},
 			wantCount: 3,
 			wantIDs:   []string{"a1", "c3", "d4"},
 		},
@@ -98,10 +98,10 @@ func TestFilterBeans(t *testing.T) {
 func TestExcludeByStatus(t *testing.T) {
 	// Create test beans
 	beans := []*bean.Bean{
-		{ID: "a1", Status: "open"},
+		{ID: "a1", Status: "todo"},
 		{ID: "b2", Status: "in-progress"},
-		{ID: "c3", Status: "done"},
-		{ID: "d4", Status: "open"},
+		{ID: "c3", Status: "completed"},
+		{ID: "d4", Status: "todo"},
 		{ID: "e5", Status: "in-progress"},
 	}
 
@@ -122,8 +122,8 @@ func TestExcludeByStatus(t *testing.T) {
 			wantCount: 5,
 		},
 		{
-			name:      "exclude done",
-			statuses:  []string{"done"},
+			name:      "exclude completed",
+			statuses:  []string{"completed"},
 			wantCount: 4,
 			wantIDs:   []string{"a1", "b2", "d4", "e5"},
 		},
@@ -135,13 +135,13 @@ func TestExcludeByStatus(t *testing.T) {
 		},
 		{
 			name:      "exclude multiple statuses",
-			statuses:  []string{"done", "in-progress"},
+			statuses:  []string{"completed", "in-progress"},
 			wantCount: 2,
 			wantIDs:   []string{"a1", "d4"},
 		},
 		{
 			name:      "exclude all",
-			statuses:  []string{"open", "in-progress", "done"},
+			statuses:  []string{"todo", "in-progress", "completed"},
 			wantCount: 0,
 		},
 		{

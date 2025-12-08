@@ -20,12 +20,12 @@ func TestParse(t *testing.T) {
 			name: "basic bean",
 			input: `---
 title: Test Bean
-status: open
+status: todo
 ---
 
 This is the body.`,
 			expectedTitle:  "Test Bean",
-			expectedStatus: "open",
+			expectedStatus: "todo",
 			expectedBody:   "\nThis is the body.",
 		},
 		{
@@ -46,17 +46,17 @@ Body content here.`,
 			name: "empty body",
 			input: `---
 title: No Body
-status: done
+status: completed
 ---`,
 			expectedTitle:  "No Body",
-			expectedStatus: "done",
+			expectedStatus: "completed",
 			expectedBody:   "",
 		},
 		{
 			name: "multiline body",
 			input: `---
 title: Multi Line
-status: open
+status: todo
 ---
 
 # Header
@@ -66,7 +66,7 @@ status: open
 
 Paragraph text.`,
 			expectedTitle:  "Multi Line",
-			expectedStatus: "open",
+			expectedStatus: "todo",
 			expectedBody:   "\n# Header\n\n- Item 1\n- Item 2\n\nParagraph text.",
 		},
 		{
@@ -114,7 +114,7 @@ func TestParseWithType(t *testing.T) {
 			name: "with type field",
 			input: `---
 title: Bug Report
-status: open
+status: todo
 type: bug
 ---
 
@@ -125,7 +125,7 @@ Description of the bug.`,
 			name: "without type field",
 			input: `---
 title: No Type
-status: open
+status: todo
 ---
 
 No type specified.`,
@@ -137,7 +137,7 @@ No type specified.`,
 			name: "with unknown type (backwards compatibility)",
 			input: `---
 title: Legacy Bean
-status: open
+status: todo
 type: deprecated-type-no-longer-in-config
 ---`,
 			expectedType: "deprecated-type-no-longer-in-config",
@@ -170,24 +170,24 @@ func TestRender(t *testing.T) {
 			name: "basic bean",
 			bean: &Bean{
 				Title:  "Test Bean",
-				Status: "open",
+				Status: "todo",
 			},
 			contains: []string{
 				"---",
 				"title: Test Bean",
-				"status: open",
+				"status: todo",
 			},
 		},
 		{
 			name: "with body",
 			bean: &Bean{
 				Title:  "With Body",
-				Status: "done",
+				Status: "completed",
 				Body:   "This is content.",
 			},
 			contains: []string{
 				"title: With Body",
-				"status: done",
+				"status: completed",
 				"This is content.",
 			},
 		},
@@ -195,7 +195,7 @@ func TestRender(t *testing.T) {
 			name: "with timestamps",
 			bean: &Bean{
 				Title:     "Timed",
-				Status:    "open",
+				Status:    "todo",
 				CreatedAt: &now,
 				UpdatedAt: &now,
 			},
@@ -209,12 +209,12 @@ func TestRender(t *testing.T) {
 			name: "with type",
 			bean: &Bean{
 				Title:  "Typed Bean",
-				Status: "open",
+				Status: "todo",
 				Type:   "bug",
 			},
 			contains: []string{
 				"title: Typed Bean",
-				"status: open",
+				"status: todo",
 				"type: bug",
 			},
 		},
@@ -249,7 +249,7 @@ func TestParseRenderRoundtrip(t *testing.T) {
 			name: "basic",
 			bean: &Bean{
 				Title:  "Basic Bean",
-				Status: "open",
+				Status: "todo",
 			},
 		},
 		{
@@ -264,7 +264,7 @@ func TestParseRenderRoundtrip(t *testing.T) {
 			name: "with timestamps",
 			bean: &Bean{
 				Title:     "Timestamped Bean",
-				Status:    "done",
+				Status:    "completed",
 				CreatedAt: &now,
 				UpdatedAt: &later,
 				Body:      "Some content.",
@@ -274,7 +274,7 @@ func TestParseRenderRoundtrip(t *testing.T) {
 			name: "with type",
 			bean: &Bean{
 				Title:  "Typed Bean",
-				Status: "open",
+				Status: "todo",
 				Type:   "bug",
 				Body:   "Bug description.",
 			},
@@ -339,7 +339,7 @@ func TestBeanJSONSerialization(t *testing.T) {
 		bean := &Bean{
 			ID:     "test-123",
 			Title:  "Test Bean",
-			Status: "open",
+			Status: "todo",
 			Body:   "",
 		}
 
@@ -358,7 +358,7 @@ func TestBeanJSONSerialization(t *testing.T) {
 		bean := &Bean{
 			ID:     "test-123",
 			Title:  "Test Bean",
-			Status: "open",
+			Status: "todo",
 			Body:   "This is the body content.",
 		}
 
@@ -384,7 +384,7 @@ func TestParseWithLinks(t *testing.T) {
 			name: "single link",
 			input: `---
 title: Test
-status: open
+status: todo
 links:
   - blocks: abc123
 ---`,
@@ -396,7 +396,7 @@ links:
 			name: "multiple links of same type",
 			input: `---
 title: Test
-status: open
+status: todo
 links:
   - blocks: abc123
   - blocks: def456
@@ -410,7 +410,7 @@ links:
 			name: "multiple link types",
 			input: `---
 title: Test
-status: open
+status: todo
 links:
   - blocks: abc123
   - parent: xyz789
@@ -424,7 +424,7 @@ links:
 			name: "no links",
 			input: `---
 title: Test
-status: open
+status: todo
 ---`,
 			expectedLinks: nil,
 		},
@@ -467,7 +467,7 @@ func TestRenderWithLinks(t *testing.T) {
 			name: "with single link",
 			bean: &Bean{
 				Title:  "Test Bean",
-				Status: "open",
+				Status: "todo",
 				Links: Links{
 					{Type: "blocks", Target: "abc123"},
 				},
@@ -481,7 +481,7 @@ func TestRenderWithLinks(t *testing.T) {
 			name: "with multiple links",
 			bean: &Bean{
 				Title:  "Test Bean",
-				Status: "open",
+				Status: "todo",
 				Links: Links{
 					{Type: "blocks", Target: "abc123"},
 					{Type: "blocks", Target: "def456"},
@@ -499,7 +499,7 @@ func TestRenderWithLinks(t *testing.T) {
 			name: "without links",
 			bean: &Bean{
 				Title:  "Test Bean",
-				Status: "open",
+				Status: "todo",
 			},
 			contains: []string{
 				"title: Test Bean",
@@ -562,7 +562,7 @@ func TestLinksRoundtrip(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			original := &Bean{
 				Title:  "Test",
-				Status: "open",
+				Status: "todo",
 				Links:  tt.links,
 			}
 
@@ -812,7 +812,7 @@ func TestParseWithTags(t *testing.T) {
 			name: "single tag",
 			input: `---
 title: Test
-status: open
+status: todo
 tags:
   - frontend
 ---`,
@@ -822,7 +822,7 @@ tags:
 			name: "multiple tags",
 			input: `---
 title: Test
-status: open
+status: todo
 tags:
   - frontend
   - urgent
@@ -834,7 +834,7 @@ tags:
 			name: "inline tags syntax",
 			input: `---
 title: Test
-status: open
+status: todo
 tags: [frontend, backend]
 ---`,
 			expectedTags: []string{"frontend", "backend"},
@@ -843,7 +843,7 @@ tags: [frontend, backend]
 			name: "no tags",
 			input: `---
 title: Test
-status: open
+status: todo
 ---`,
 			expectedTags: nil,
 		},
@@ -884,7 +884,7 @@ func TestRenderWithTags(t *testing.T) {
 			name: "with single tag",
 			bean: &Bean{
 				Title:  "Test Bean",
-				Status: "open",
+				Status: "todo",
 				Tags:   []string{"frontend"},
 			},
 			contains: []string{
@@ -896,7 +896,7 @@ func TestRenderWithTags(t *testing.T) {
 			name: "with multiple tags",
 			bean: &Bean{
 				Title:  "Test Bean",
-				Status: "open",
+				Status: "todo",
 				Tags:   []string{"frontend", "urgent", "tech-debt"},
 			},
 			contains: []string{
@@ -910,7 +910,7 @@ func TestRenderWithTags(t *testing.T) {
 			name: "without tags",
 			bean: &Bean{
 				Title:  "Test Bean",
-				Status: "open",
+				Status: "todo",
 			},
 			contains: []string{
 				"title: Test Bean",
@@ -963,7 +963,7 @@ func TestTagsRoundtrip(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			original := &Bean{
 				Title:  "Test",
-				Status: "open",
+				Status: "todo",
 				Tags:   tt.tags,
 			}
 

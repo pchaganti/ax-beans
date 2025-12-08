@@ -1,11 +1,11 @@
 ---
 title: Add priority field
-status: todo
+status: backlog
 type: feature
 tags:
     - schema
 created_at: 2025-12-06T22:04:39Z
-updated_at: 2025-12-07T19:01:06Z
+updated_at: 2025-12-08T14:09:11Z
 links:
     - parent: beans-v8qj
     - parent: beans-7lmv

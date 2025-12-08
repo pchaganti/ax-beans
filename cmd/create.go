@@ -196,7 +196,7 @@ func formatStatusLabel(status string) string {
 }
 
 func init() {
-	createCmd.Flags().StringVarP(&createStatus, "status", "s", "", "Initial status (open, in-progress, done)")
+	createCmd.Flags().StringVarP(&createStatus, "status", "s", "", "Initial status")
 	createCmd.Flags().StringVarP(&createType, "type", "t", "", "Bean type (e.g., task, bug, epic)")
 	createCmd.Flags().StringVarP(&createBody, "body", "d", "", "Body content (use '-' to read from stdin)")
 	createCmd.Flags().StringVar(&createBodyFile, "body-file", "", "Read body from file")
