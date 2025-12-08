@@ -57,13 +57,12 @@ func SuccessWithWarnings(b *bean.Bean, message string, warnings []string) error 
 	})
 }
 
-// SuccessMultiple outputs a successful multi-bean response.
+// SuccessMultiple outputs a bean array directly (no wrapper).
+// This allows intuitive jq usage: beans list --json | jq '.[]'
 func SuccessMultiple(beans []*bean.Bean) error {
-	return JSON(Response{
-		Success: true,
-		Beans:   beans,
-		Count:   len(beans),
-	})
+	enc := json.NewEncoder(os.Stdout)
+	enc.SetIndent("", "  ")
+	return enc.Encode(beans)
 }
 
 // SuccessMessage outputs a success response with just a message.
