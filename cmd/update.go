@@ -207,8 +207,8 @@ func init() {
 	}
 
 	updateCmd.Flags().StringVarP(&updateStatus, "status", "s", "", "New status ("+strings.Join(statusNames, ", ")+")")
-	updateCmd.Flags().StringVar(&updateType, "type", "", "New type ("+strings.Join(typeNames, ", ")+")")
-	updateCmd.Flags().StringVarP(&updateTitle, "title", "t", "", "New title")
+	updateCmd.Flags().StringVarP(&updateType, "type", "t", "", "New type ("+strings.Join(typeNames, ", ")+")")
+	updateCmd.Flags().StringVar(&updateTitle, "title", "", "New title")
 	updateCmd.Flags().StringVarP(&updateBody, "body", "d", "", "New body (use '-' to read from stdin)")
 	updateCmd.Flags().StringVar(&updateBodyFile, "body-file", "", "Read body from file")
 	updateCmd.Flags().StringArrayVar(&updateLink, "link", nil, "Add relationship (format: type:id, can be repeated)")

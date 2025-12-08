@@ -22,7 +22,6 @@ var (
 	createTag      []string
 	createLink     []string
 	createNoEdit   bool
-	createPath     string
 	createJSON     bool
 )
 
@@ -137,11 +136,6 @@ var createCmd = &cobra.Command{
 			return err
 		}
 
-		// Set path if provided
-		if createPath != "" {
-			b.Path = createPath + "/" + bean.BuildFilename(b.ID, b.Slug)
-		}
-
 		if err := core.Create(b); err != nil {
 			if createJSON {
 				return output.Error(output.ErrFileError, err.Error())
@@ -214,7 +208,6 @@ func init() {
 	createCmd.Flags().StringArrayVar(&createTag, "tag", nil, "Add tag (can be repeated)")
 	createCmd.Flags().StringArrayVar(&createLink, "link", nil, "Add relationship (format: type:id, can be repeated)")
 	createCmd.Flags().BoolVar(&createNoEdit, "no-edit", false, "Skip opening $EDITOR")
-	createCmd.Flags().StringVarP(&createPath, "path", "p", "", "Subdirectory within .beans/")
 	createCmd.Flags().BoolVar(&createJSON, "json", false, "Output as JSON")
 	createCmd.MarkFlagsMutuallyExclusive("body", "body-file")
 	rootCmd.AddCommand(createCmd)
