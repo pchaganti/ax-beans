@@ -54,6 +54,8 @@ Beans can have relationships to other beans. Use these to express dependencies a
 
 **Relationship types:** `blocks`, `duplicates`, `parent`, `related`
 
+**Note:** A bean can only have **one parent**. To change a bean's parent, first remove the existing parent with `--unlink parent:<old-id>`, then add the new one. Use chaining for hierarchy (e.g., task → epic → milestone).
+
 **Filtering by relationship:**
 
 Outgoing (active) links - use `--links`:

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"text/template"
@@ -176,9 +177,6 @@ func buildMilestoneGroup(m *bean.Bean, children map[string][]*bean.Bean, _ map[s
 		}
 	}
 
-	// Track items that appear under epics to avoid duplicates in "Other"
-	inEpic := make(map[string]bool)
-
 	// Build epic groups
 	for _, epic := range epics {
 		epicItems := filterChildren(children[epic.ID], includeDone)
@@ -186,20 +184,14 @@ func buildMilestoneGroup(m *bean.Bean, children map[string][]*bean.Bean, _ map[s
 		if len(epicItems) > 0 {
 			sortByTypeThenStatus(epicItems, cfg)
 			group.Epics = append(group.Epics, epicGroup{Epic: epic, Items: epicItems})
-			// Mark these items as belonging to an epic
-			for _, item := range epicItems {
-				inEpic[item.ID] = true
-			}
 		}
 	}
 
-	// Build "Other" list: direct children that are not epics and not already in an epic
+	// Build "Other" list: direct children that are not epics
+	// (With single parent enforcement, items can't be both under an epic and directly under the milestone)
 	var other []*bean.Bean
 	for _, child := range directChildren {
 		if child.Type == "epic" {
-			continue
-		}
-		if inEpic[child.ID] {
 			continue
 		}
 		if includeDone || !cfg.IsArchiveStatus(child.Status) {
@@ -249,12 +241,7 @@ func hasParentOfType(b *bean.Bean, parentType string, byID map[string]*bean.Bean
 
 // containsStatus checks if a status is in the list.
 func containsStatus(statuses []string, status string) bool {
-	for _, s := range statuses {
-		if s == status {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(statuses, status)
 }
 
 // sortByStatusThenCreated sorts beans by status order, then by created date.

@@ -84,6 +84,10 @@ func applyLinks(b *bean.Bean, links []string) (warnings []string, err error) {
 		if targetID == b.ID {
 			return nil, fmt.Errorf("bean cannot link to itself")
 		}
+		// Enforce single parent constraint
+		if linkType == "parent" && len(b.Links.Targets("parent")) > 0 {
+			return nil, fmt.Errorf("bean already has a parent; remove existing parent first with --unlink")
+		}
 		// Check for cycles in hierarchical link types
 		if linkType == "blocks" || linkType == "parent" {
 			if cycle := core.DetectCycle(b.ID, linkType, targetID); cycle != nil {

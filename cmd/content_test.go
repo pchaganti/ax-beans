@@ -233,6 +233,24 @@ func TestFormatCycle(t *testing.T) {
 	}
 }
 
+func TestApplyLinks_SingleParent(t *testing.T) {
+	b := &bean.Bean{
+		ID:    "task1",
+		Links: bean.Links{{Type: "parent", Target: "epic1"}},
+	}
+
+	_, err := applyLinks(b, []string{"parent:epic2"})
+	if err == nil {
+		t.Error("applyLinks() expected error for second parent, got nil")
+		return
+	}
+
+	expected := "bean already has a parent; remove existing parent first with --unlink"
+	if err.Error() != expected {
+		t.Errorf("applyLinks() error = %q, want %q", err.Error(), expected)
+	}
+}
+
 func TestRemoveLinks(t *testing.T) {
 	tests := []struct {
 		name      string

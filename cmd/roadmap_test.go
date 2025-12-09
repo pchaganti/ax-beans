@@ -96,18 +96,6 @@ func TestBuildRoadmap(t *testing.T) {
 			},
 			wantMilestones: 0, // milestone has no children
 		},
-		{
-			name: "item with both epic and milestone parent appears once under epic",
-			beans: []*bean.Bean{
-				{ID: "m1", Type: "milestone", Title: "v1.0", Status: "todo", CreatedAt: &now},
-				{ID: "e1", Type: "epic", Title: "Auth", Status: "todo", Links: bean.Links{{Type: "parent", Target: "m1"}}},
-				{ID: "t1", Type: "task", Title: "Login", Status: "todo", Links: bean.Links{
-					{Type: "parent", Target: "e1"},
-					{Type: "parent", Target: "m1"},
-				}},
-			},
-			wantMilestones: 1,
-		},
 	}
 
 	for _, tt := range tests {
@@ -122,44 +110,6 @@ func TestBuildRoadmap(t *testing.T) {
 				t.Errorf("got %d unscheduled, want %d", got, tt.wantUnscheduled)
 			}
 		})
-	}
-}
-
-func TestBuildRoadmap_DuplicateAvoidance(t *testing.T) {
-	// Verify that an item with both epic and milestone parent appears only under epic
-	oldCfg := cfg
-	defer func() { cfg = oldCfg }()
-
-	// Statuses are now hardcoded
-	cfg = config.Default()
-
-	now := time.Now()
-	beans := []*bean.Bean{
-		{ID: "m1", Type: "milestone", Title: "v1.0", Status: "todo", CreatedAt: &now},
-		{ID: "e1", Type: "epic", Title: "Auth", Status: "todo", Links: bean.Links{{Type: "parent", Target: "m1"}}},
-		{ID: "t1", Type: "task", Title: "Login", Status: "todo", Links: bean.Links{
-			{Type: "parent", Target: "e1"},
-			{Type: "parent", Target: "m1"},
-		}},
-	}
-
-	result := buildRoadmap(beans, false, nil, nil)
-
-	if len(result.Milestones) != 1 {
-		t.Fatalf("expected 1 milestone, got %d", len(result.Milestones))
-	}
-
-	mg := result.Milestones[0]
-	if len(mg.Epics) != 1 {
-		t.Fatalf("expected 1 epic, got %d", len(mg.Epics))
-	}
-
-	if len(mg.Epics[0].Items) != 1 {
-		t.Errorf("expected 1 item under epic, got %d", len(mg.Epics[0].Items))
-	}
-
-	if len(mg.Other) != 0 {
-		t.Errorf("expected 0 items in Other, got %d", len(mg.Other))
 	}
 }
 
