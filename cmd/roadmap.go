@@ -30,7 +30,13 @@ var (
 // roadmapData holds the structured roadmap for JSON output.
 type roadmapData struct {
 	Milestones  []milestoneGroup `json:"milestones"`
-	Unscheduled []epicGroup      `json:"unscheduled,omitempty"`
+	Unscheduled *unscheduledGroup `json:"unscheduled,omitempty"`
+}
+
+// unscheduledGroup represents items not assigned to any milestone.
+type unscheduledGroup struct {
+	Epics []epicGroup  `json:"epics,omitempty"`
+	Other []*bean.Bean `json:"other,omitempty"`
 }
 
 // milestoneGroup represents a milestone and its contents.
@@ -130,28 +136,82 @@ func buildRoadmap(allBeans []*bean.Bean, includeDone bool, statusFilter, noStatu
 	// Build milestone groups
 	var milestoneGroups []milestoneGroup
 	for _, m := range milestones {
-		group := buildMilestoneGroup(m, children, byID, includeDone)
+		group := buildMilestoneGroup(m, children, includeDone)
 		// Only include milestones that have visible content
 		if len(group.Epics) > 0 || len(group.Other) > 0 {
 			milestoneGroups = append(milestoneGroups, group)
 		}
 	}
 
-	// Find unscheduled epics (epics with children but no milestone parent)
-	var unscheduled []epicGroup
+	// Build unscheduled group: items not under any milestone
+	// Track which beans are under a milestone (directly or via epic)
+	underMilestone := make(map[string]bool)
+	for _, m := range milestones {
+		underMilestone[m.ID] = true
+		for _, child := range children[m.ID] {
+			underMilestone[child.ID] = true
+			// Also mark children of epics under this milestone
+			if child.Type == "epic" {
+				for _, epicChild := range children[child.ID] {
+					underMilestone[epicChild.ID] = true
+				}
+			}
+		}
+	}
+
+	// Find unscheduled epics (epics not under a milestone)
+	var unscheduledEpics []epicGroup
 	for _, b := range allBeans {
 		if b.Type != "epic" {
 			continue
 		}
-		// Check if this epic has a milestone as parent
-		if hasParentOfType(b, "milestone", byID) {
+		if underMilestone[b.ID] {
 			continue
 		}
 		// Build epic group if it has visible children
 		epicItems := filterChildren(children[b.ID], includeDone)
 		if len(epicItems) > 0 {
 			sortByTypeThenStatus(epicItems, cfg)
-			unscheduled = append(unscheduled, epicGroup{Epic: b, Items: epicItems})
+			unscheduledEpics = append(unscheduledEpics, epicGroup{Epic: b, Items: epicItems})
+		}
+	}
+
+	// Sort unscheduled epics by title
+	sort.Slice(unscheduledEpics, func(i, j int) bool {
+		return unscheduledEpics[i].Epic.Title < unscheduledEpics[j].Epic.Title
+	})
+
+	// Find orphan items (not milestone, not epic, no parent or parent is not milestone/epic)
+	var orphanItems []*bean.Bean
+	for _, b := range allBeans {
+		// Skip milestones and epics
+		if b.Type == "milestone" || b.Type == "epic" {
+			continue
+		}
+		// Skip if already under a milestone
+		if underMilestone[b.ID] {
+			continue
+		}
+		// Skip if has a parent (it's under an unscheduled epic, handled above)
+		if len(b.Links.Targets("parent")) > 0 {
+			continue
+		}
+		// Apply done filter
+		if !includeDone && cfg.IsArchiveStatus(b.Status) {
+			continue
+		}
+		orphanItems = append(orphanItems, b)
+	}
+
+	// Sort orphan items
+	sortByTypeThenStatus(orphanItems, cfg)
+
+	// Build unscheduled group if there's content
+	var unscheduled *unscheduledGroup
+	if len(unscheduledEpics) > 0 || len(orphanItems) > 0 {
+		unscheduled = &unscheduledGroup{
+			Epics: unscheduledEpics,
+			Other: orphanItems,
 		}
 	}
 
@@ -162,7 +222,7 @@ func buildRoadmap(allBeans []*bean.Bean, includeDone bool, statusFilter, noStatu
 }
 
 // buildMilestoneGroup builds a milestone group with its epics and other items.
-func buildMilestoneGroup(m *bean.Bean, children map[string][]*bean.Bean, _ map[string]*bean.Bean, includeDone bool) milestoneGroup {
+func buildMilestoneGroup(m *bean.Bean, children map[string][]*bean.Bean, includeDone bool) milestoneGroup {
 	group := milestoneGroup{Milestone: m}
 
 	// Get direct children of this milestone
@@ -227,16 +287,6 @@ func filterChildren(children []*bean.Bean, includeDone bool) []*bean.Bean {
 		}
 	}
 	return filtered
-}
-
-// hasParentOfType checks if a bean has a parent of the given type.
-func hasParentOfType(b *bean.Bean, parentType string, byID map[string]*bean.Bean) bool {
-	for _, parentID := range b.Links.Targets("parent") {
-		if parent, ok := byID[parentID]; ok && parent.Type == parentType {
-			return true
-		}
-	}
-	return false
 }
 
 // containsStatus checks if a status is in the list.

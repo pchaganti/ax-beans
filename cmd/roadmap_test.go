@@ -33,11 +33,12 @@ func TestBuildRoadmap(t *testing.T) {
 	now := time.Now()
 
 	tests := []struct {
-		name           string
-		beans          []*bean.Bean
-		includeDone    bool
-		wantMilestones int
-		wantUnscheduled int
+		name                  string
+		beans                 []*bean.Bean
+		includeDone           bool
+		wantMilestones        int
+		wantUnscheduledEpics  int
+		wantUnscheduledOther  int
 	}{
 		{
 			name:           "empty beans",
@@ -67,8 +68,8 @@ func TestBuildRoadmap(t *testing.T) {
 				{ID: "e1", Type: "epic", Title: "Future", Status: "todo"},
 				{ID: "t1", Type: "task", Title: "Nice to have", Status: "todo", Links: bean.Links{{Type: "parent", Target: "e1"}}},
 			},
-			wantMilestones:  0,
-			wantUnscheduled: 1,
+			wantMilestones:       0,
+			wantUnscheduledEpics: 1,
 		},
 		{
 			name: "done items excluded by default",
@@ -89,12 +90,13 @@ func TestBuildRoadmap(t *testing.T) {
 			wantMilestones: 1,
 		},
 		{
-			name: "bean without parent not included",
+			name: "orphan bean appears in unscheduled other",
 			beans: []*bean.Bean{
 				{ID: "m1", Type: "milestone", Title: "v1.0", Status: "todo", CreatedAt: &now},
 				{ID: "t1", Type: "task", Title: "Orphan", Status: "todo"}, // no parent link
 			},
-			wantMilestones: 0, // milestone has no children
+			wantMilestones:       0, // milestone has no children
+			wantUnscheduledOther: 1, // orphan appears in unscheduled
 		},
 	}
 
@@ -106,8 +108,17 @@ func TestBuildRoadmap(t *testing.T) {
 				t.Errorf("got %d milestones, want %d", got, tt.wantMilestones)
 			}
 
-			if got := len(result.Unscheduled); got != tt.wantUnscheduled {
-				t.Errorf("got %d unscheduled, want %d", got, tt.wantUnscheduled)
+			gotUnscheduledEpics := 0
+			gotUnscheduledOther := 0
+			if result.Unscheduled != nil {
+				gotUnscheduledEpics = len(result.Unscheduled.Epics)
+				gotUnscheduledOther = len(result.Unscheduled.Other)
+			}
+			if gotUnscheduledEpics != tt.wantUnscheduledEpics {
+				t.Errorf("got %d unscheduled epics, want %d", gotUnscheduledEpics, tt.wantUnscheduledEpics)
+			}
+			if gotUnscheduledOther != tt.wantUnscheduledOther {
+				t.Errorf("got %d unscheduled other, want %d", gotUnscheduledOther, tt.wantUnscheduledOther)
 			}
 		})
 	}
