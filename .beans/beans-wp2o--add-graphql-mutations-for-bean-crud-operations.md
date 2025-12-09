@@ -27,15 +27,12 @@ The following CLI commands need mutations to migrate to GraphQL:
 type Mutation {
   """Create a new bean"""
   createBean(input: CreateBeanInput!): Bean!
-  
+
   """Update an existing bean"""
   updateBean(id: ID!, input: UpdateBeanInput!): Bean!
-  
-  """Delete a bean by ID"""
+
+  """Delete a bean by ID (automatically removes incoming links)"""
   deleteBean(id: ID!): Boolean!
-  
-  """Remove all links pointing to a bean"""
-  removeLinksTo(id: ID!): Int!
 }
 
 input CreateBeanInput {
@@ -71,6 +68,5 @@ input LinkInput {
 - [ ] Run `mise codegen` to regenerate code
 - [ ] Implement createBean resolver
 - [ ] Implement updateBean resolver
-- [ ] Implement deleteBean resolver
-- [ ] Implement removeLinksTo resolver
+- [ ] Implement deleteBean resolver (includes removing incoming links)
 - [ ] Add tests for all mutations
