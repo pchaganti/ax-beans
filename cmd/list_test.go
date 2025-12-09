@@ -84,8 +84,8 @@ func TestSortBeans(t *testing.T) {
 		}
 		sortBeans(beans, "status", testCfg)
 
-		// Should be ordered by status config order (not-ready, ready, in-progress, completed, scrapped), then by ID within same status
-		expected := []string{"t1", "t2", "i1", "c1"}
+		// Should be ordered by status config order (in-progress, todo, backlog, completed, scrapped), then by ID within same status
+		expected := []string{"i1", "t1", "t2", "c1"}
 		for i, want := range expected {
 			if beans[i].ID != want {
 				t.Errorf("sort by status[%d]: got %q, want %q", i, beans[i].ID, want)

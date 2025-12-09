@@ -77,7 +77,7 @@ func TestIsValidStatus(t *testing.T) {
 func TestStatusList(t *testing.T) {
 	cfg := Default()
 	got := cfg.StatusList()
-	want := "backlog, todo, in-progress, completed, scrapped"
+	want := "in-progress, todo, backlog, completed, scrapped"
 
 	if got != want {
 		t.Errorf("StatusList() = %q, want %q", got, want)
@@ -91,7 +91,7 @@ func TestStatusNames(t *testing.T) {
 	if len(got) != 5 {
 		t.Fatalf("len(StatusNames()) = %d, want 5", len(got))
 	}
-	expected := []string{"backlog", "todo", "in-progress", "completed", "scrapped"}
+	expected := []string{"in-progress", "todo", "backlog", "completed", "scrapped"}
 	for i, name := range expected {
 		if got[i] != name {
 			t.Errorf("StatusNames()[%d] = %q, want %q", i, got[i], name)
