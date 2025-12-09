@@ -1,9 +1,12 @@
 package tui
 
 import (
+	"context"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"hmans.dev/beans/internal/beancore"
 	"hmans.dev/beans/internal/config"
+	"hmans.dev/beans/internal/graph"
 )
 
 // viewState represents which view is currently active
@@ -37,6 +40,7 @@ type App struct {
 	tagPicker tagPickerModel
 	history   []detailModel // stack of previous detail views for back navigation
 	core      *beancore.Core
+	resolver  *graph.Resolver
 	config    *config.Config
 	width     int
 	height    int
@@ -48,11 +52,13 @@ type App struct {
 
 // New creates a new TUI application
 func New(core *beancore.Core, cfg *config.Config) *App {
+	resolver := &graph.Resolver{Core: core}
 	return &App{
-		state:  viewList,
-		core:   core,
-		config: cfg,
-		list:   newListModel(core, cfg),
+		state:    viewList,
+		core:     core,
+		resolver: resolver,
+		config:   cfg,
+		list:     newListModel(resolver, cfg),
 	}
 }
 
@@ -112,14 +118,15 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case beansChangedMsg:
 		// Beans changed on disk - refresh
 		if a.state == viewDetail {
-			// Try to reload the current bean
-			if updatedBean, err := a.core.Get(a.detail.bean.ID); err != nil {
+			// Try to reload the current bean via GraphQL
+			updatedBean, err := a.resolver.Query().Bean(context.Background(), a.detail.bean.ID)
+			if err != nil || updatedBean == nil {
 				// Bean was deleted - return to list
 				a.state = viewList
 				a.history = nil
 			} else {
 				// Recreate detail view with fresh bean data
-				a.detail = newDetailModel(updatedBean, a.core, a.config, a.width, a.height)
+				a.detail = newDetailModel(updatedBean, a.resolver, a.config, a.width, a.height)
 			}
 		}
 		// Trigger list refresh
@@ -151,7 +158,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			a.history = append(a.history, a.detail)
 		}
 		a.state = viewDetail
-		a.detail = newDetailModel(msg.bean, a.core, a.config, a.width, a.height)
+		a.detail = newDetailModel(msg.bean, a.resolver, a.config, a.width, a.height)
 		return a, a.detail.Init()
 
 	case backToListMsg:
@@ -184,8 +191,9 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // collectTagsWithCounts returns all tags with their usage counts
 func (a *App) collectTagsWithCounts() []tagWithCount {
+	beans, _ := a.resolver.Query().Beans(context.Background(), nil)
 	tagCounts := make(map[string]int)
-	for _, b := range a.core.All() {
+	for _, b := range beans {
 		for _, tag := range b.Tags {
 			tagCounts[tag]++
 		}

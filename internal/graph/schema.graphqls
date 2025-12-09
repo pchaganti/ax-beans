@@ -53,6 +53,10 @@ type Bean {
   parent: Bean
   "Child beans (beans with this as parent)"
   children: [Bean!]!
+  "Duplicate beans (bidirectional - both outgoing and incoming 'duplicates' links)"
+  duplicates: [Bean!]!
+  "Related beans (bidirectional - both outgoing and incoming 'related' links)"
+  related: [Bean!]!
 }
 
 """

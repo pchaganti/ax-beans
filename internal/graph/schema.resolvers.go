@@ -74,6 +74,60 @@ func (r *beanResolver) Children(ctx context.Context, obj *bean.Bean) ([]*bean.Be
 	return result, nil
 }
 
+// Duplicates is the resolver for the duplicates field.
+// Bidirectional: returns both outgoing and incoming 'duplicates' links.
+func (r *beanResolver) Duplicates(ctx context.Context, obj *bean.Bean) ([]*bean.Bean, error) {
+	seen := make(map[string]bool)
+	var result []*bean.Bean
+
+	// Outgoing links
+	for _, link := range obj.Links {
+		if link.Type == "duplicates" {
+			if target, err := r.Core.Get(link.Target); err == nil && !seen[target.ID] {
+				seen[target.ID] = true
+				result = append(result, target)
+			}
+		}
+	}
+
+	// Incoming links
+	for _, link := range r.Core.FindIncomingLinks(obj.ID) {
+		if link.LinkType == "duplicates" && !seen[link.FromBean.ID] {
+			seen[link.FromBean.ID] = true
+			result = append(result, link.FromBean)
+		}
+	}
+
+	return result, nil
+}
+
+// Related is the resolver for the related field.
+// Bidirectional: returns both outgoing and incoming 'related' links.
+func (r *beanResolver) Related(ctx context.Context, obj *bean.Bean) ([]*bean.Bean, error) {
+	seen := make(map[string]bool)
+	var result []*bean.Bean
+
+	// Outgoing links
+	for _, link := range obj.Links {
+		if link.Type == "related" {
+			if target, err := r.Core.Get(link.Target); err == nil && !seen[target.ID] {
+				seen[target.ID] = true
+				result = append(result, target)
+			}
+		}
+	}
+
+	// Incoming links
+	for _, link := range r.Core.FindIncomingLinks(obj.ID) {
+		if link.LinkType == "related" && !seen[link.FromBean.ID] {
+			seen[link.FromBean.ID] = true
+			result = append(result, link.FromBean)
+		}
+	}
+
+	return result, nil
+}
+
 // TargetBean is the resolver for the targetBean field.
 func (r *linkResolver) TargetBean(ctx context.Context, obj *bean.Link) (*bean.Bean, error) {
 	// Filter out broken links by returning nil

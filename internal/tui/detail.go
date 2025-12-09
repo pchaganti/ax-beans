@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"sort"
@@ -13,8 +14,8 @@ import (
 	"github.com/charmbracelet/glamour"
 	"github.com/charmbracelet/lipgloss"
 	"hmans.dev/beans/internal/bean"
-	"hmans.dev/beans/internal/beancore"
 	"hmans.dev/beans/internal/config"
+	"hmans.dev/beans/internal/graph"
 	"hmans.dev/beans/internal/ui"
 )
 
@@ -125,7 +126,7 @@ func (d linkDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 type detailModel struct {
 	viewport    viewport.Model
 	bean        *bean.Bean
-	core        *beancore.Core
+	resolver    *graph.Resolver
 	config      *config.Config
 	width       int
 	height      int
@@ -136,10 +137,10 @@ type detailModel struct {
 	cols        ui.ResponsiveColumns // responsive column widths for links
 }
 
-func newDetailModel(b *bean.Bean, core *beancore.Core, cfg *config.Config, width, height int) detailModel {
+func newDetailModel(b *bean.Bean, resolver *graph.Resolver, cfg *config.Config, width, height int) detailModel {
 	m := detailModel{
 		bean:        b,
-		core:        core,
+		resolver:    resolver,
 		config:      cfg,
 		width:       width,
 		height:      height,
@@ -476,23 +477,41 @@ func (m detailModel) formatLinkLabel(linkType string, incoming bool) string {
 
 func (m detailModel) resolveAllLinks() []resolvedLink {
 	var links []resolvedLink
+	ctx := context.Background()
+	beanResolver := m.resolver.Bean()
 
-	// Get all beans from core (already in memory)
-	allBeans := m.core.All()
-
-	// Build a lookup map by ID for fast resolution
-	beansByID := make(map[string]*bean.Bean)
-	for _, b := range allBeans {
-		beansByID[b.ID] = b
+	// Resolve outgoing links via GraphQL resolvers
+	if blocks, _ := beanResolver.Blocks(ctx, m.bean); blocks != nil {
+		for _, b := range blocks {
+			links = append(links, resolvedLink{linkType: "blocks", bean: b, incoming: false})
+		}
+	}
+	if parent, _ := beanResolver.Parent(ctx, m.bean); parent != nil {
+		links = append(links, resolvedLink{linkType: "parent", bean: parent, incoming: false})
+	}
+	if duplicates, _ := beanResolver.Duplicates(ctx, m.bean); duplicates != nil {
+		for _, b := range duplicates {
+			links = append(links, resolvedLink{linkType: "duplicates", bean: b, incoming: false})
+		}
+	}
+	if related, _ := beanResolver.Related(ctx, m.bean); related != nil {
+		for _, b := range related {
+			links = append(links, resolvedLink{linkType: "related", bean: b, incoming: false})
+		}
 	}
 
-	// Resolve outgoing links (this bean links to others)
-	outgoing := m.resolveOutgoingLinks(beansByID)
-	links = append(links, outgoing...)
-
-	// Resolve incoming links (other beans link to this one)
-	incoming := m.resolveIncomingLinks(allBeans)
-	links = append(links, incoming...)
+	// Resolve incoming links via GraphQL resolvers (directional relationships only)
+	if blockedBy, _ := beanResolver.BlockedBy(ctx, m.bean); blockedBy != nil {
+		for _, b := range blockedBy {
+			links = append(links, resolvedLink{linkType: "blocks", bean: b, incoming: true})
+		}
+	}
+	if children, _ := beanResolver.Children(ctx, m.bean); children != nil {
+		for _, b := range children {
+			links = append(links, resolvedLink{linkType: "parent", bean: b, incoming: true})
+		}
+	}
+	// Note: duplicates and related are bidirectional, already handled above
 
 	// Sort all links by link type label first, then by bean status/type/title
 	// This keeps link categories together while ordering beans consistently with the main list
@@ -580,46 +599,6 @@ func compareBeansByStatusPriorityAndType(a, b *bean.Bean, statusNames, priorityN
 	return strings.ToLower(a.Title) < strings.ToLower(b.Title)
 }
 
-func (m detailModel) resolveOutgoingLinks(beansByID map[string]*bean.Bean) []resolvedLink {
-	var links []resolvedLink
-
-	for _, link := range m.bean.Links {
-		targetBean, ok := beansByID[link.Target]
-		if !ok {
-			// Skip missing beans per user preference
-			continue
-		}
-		links = append(links, resolvedLink{
-			linkType: link.Type,
-			bean:     targetBean,
-			incoming: false,
-		})
-	}
-
-	return links
-}
-
-func (m detailModel) resolveIncomingLinks(allBeans []*bean.Bean) []resolvedLink {
-	var links []resolvedLink
-
-	for _, other := range allBeans {
-		if other.ID == m.bean.ID {
-			continue
-		}
-
-		for _, link := range other.Links {
-			if link.Target == m.bean.ID {
-				links = append(links, resolvedLink{
-					linkType: link.Type,
-					bean:     other,
-					incoming: true,
-				})
-			}
-		}
-	}
-
-	return links
-}
 
 func (m detailModel) renderBody(_ int) string {
 	if m.bean.Body == "" {

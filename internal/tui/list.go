@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"context"
 	"fmt"
 	"io"
 
@@ -8,8 +9,9 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"hmans.dev/beans/internal/bean"
-	"hmans.dev/beans/internal/beancore"
 	"hmans.dev/beans/internal/config"
+	"hmans.dev/beans/internal/graph"
+	"hmans.dev/beans/internal/graph/model"
 	"hmans.dev/beans/internal/ui"
 )
 
@@ -81,12 +83,12 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 
 // listModel is the model for the bean list view
 type listModel struct {
-	list   list.Model
-	core   *beancore.Core
-	config *config.Config
-	width  int
-	height int
-	err    error
+	list     list.Model
+	resolver *graph.Resolver
+	config   *config.Config
+	width    int
+	height   int
+	err      error
 
 	// Responsive column state
 	hasTags bool                 // whether any beans have tags
@@ -96,7 +98,7 @@ type listModel struct {
 	tagFilter string // if set, only show beans with this tag
 }
 
-func newListModel(core *beancore.Core, cfg *config.Config) listModel {
+func newListModel(resolver *graph.Resolver, cfg *config.Config) listModel {
 	delegate := newItemDelegate(cfg)
 
 	l := list.New([]list.Item{}, delegate, 0, 0)
@@ -110,9 +112,9 @@ func newListModel(core *beancore.Core, cfg *config.Config) listModel {
 	l.Styles.FilterCursor = lipgloss.NewStyle().Foreground(ui.ColorPrimary)
 
 	return listModel{
-		list:   l,
-		core:   core,
-		config: cfg,
+		list:     l,
+		resolver: resolver,
+		config:   cfg,
 	}
 }
 
@@ -136,21 +138,19 @@ func (m listModel) Init() tea.Cmd {
 }
 
 func (m listModel) loadBeans() tea.Msg {
-	// Core already has beans in memory
-	allBeans := m.core.All()
-
-	// Apply tag filter if set
+	// Build filter if tag filter is set
+	var filter *model.BeanFilter
 	if m.tagFilter != "" {
-		var filtered []*bean.Bean
-		for _, b := range allBeans {
-			if b.HasTag(m.tagFilter) {
-				filtered = append(filtered, b)
-			}
-		}
-		return beansLoadedMsg{filtered}
+		filter = &model.BeanFilter{Tags: []string{m.tagFilter}}
 	}
 
-	return beansLoadedMsg{allBeans}
+	// Query beans via GraphQL resolver
+	beans, err := m.resolver.Query().Beans(context.Background(), filter)
+	if err != nil {
+		return errMsg{err}
+	}
+
+	return beansLoadedMsg{beans}
 }
 
 // setTagFilter sets the tag filter
