@@ -2,16 +2,23 @@ package cmd
 
 import (
 	_ "embed"
-	"fmt"
 	"os"
-	"strings"
+	"text/template"
 
 	"github.com/spf13/cobra"
 	"hmans.dev/beans/internal/config"
 )
 
-//go:embed prompt.md
-var agentPrompt string
+//go:embed prompt.tmpl
+var agentPromptTemplate string
+
+// promptData holds all data needed to render the prompt template.
+type promptData struct {
+	GraphQLSchema string
+	Types         []config.TypeConfig
+	Statuses      []config.StatusConfig
+	Priorities    []config.PriorityConfig
+}
 
 var promptCmd = &cobra.Command{
 	Use:   "prompt",
@@ -37,55 +44,19 @@ var promptCmd = &cobra.Command{
 			}
 		}
 
-		fmt.Print(agentPrompt)
-
-		// Append dynamic sections
-		var sb strings.Builder
-
-		// GraphQL schema section (generated dynamically)
-		sb.WriteString("\n**GraphQL Schema:**\n\n")
-		sb.WriteString("```graphql\n")
-		sb.WriteString(GetGraphQLSchema())
-		sb.WriteString("```\n")
-
-		// Issue types section
-		sb.WriteString("\n## Issue Types\n\n")
-		sb.WriteString("This project has the following issue types configured. Always specify a type with `-t` when creating beans:\n\n")
-		for _, t := range config.DefaultTypes {
-			if t.Description != "" {
-				sb.WriteString(fmt.Sprintf("- **%s**: %s\n", t.Name, t.Description))
-			} else {
-				sb.WriteString(fmt.Sprintf("- **%s**\n", t.Name))
-			}
+		tmpl, err := template.New("prompt").Parse(agentPromptTemplate)
+		if err != nil {
+			return err
 		}
 
-		// Statuses section (hardcoded statuses)
-		sb.WriteString("\n## Statuses\n\n")
-		sb.WriteString("This project has the following statuses configured:\n\n")
-		for _, s := range config.DefaultStatuses {
-			if s.Description != "" {
-				sb.WriteString(fmt.Sprintf("- **%s**: %s\n", s.Name, s.Description))
-			} else {
-				sb.WriteString(fmt.Sprintf("- **%s**\n", s.Name))
-			}
+		data := promptData{
+			GraphQLSchema: GetGraphQLSchema(),
+			Types:         config.DefaultTypes,
+			Statuses:      config.DefaultStatuses,
+			Priorities:    config.DefaultPriorities,
 		}
 
-		// Priorities section (hardcoded priorities)
-		sb.WriteString("\n## Priorities\n\n")
-		sb.WriteString("Beans can have an optional priority. Use `-p` when creating or `--priority` when updating:\n\n")
-		for _, p := range config.DefaultPriorities {
-			if p.Description != "" {
-				sb.WriteString(fmt.Sprintf("- **%s**: %s\n", p.Name, p.Description))
-			} else {
-				sb.WriteString(fmt.Sprintf("- **%s**\n", p.Name))
-			}
-		}
-		sb.WriteString("\nBeans without a priority are treated as `normal` priority for sorting purposes.\n")
-
-		sb.WriteString("\n")
-		fmt.Print(sb.String())
-
-		return nil
+		return tmpl.Execute(os.Stdout, data)
 	},
 }
 

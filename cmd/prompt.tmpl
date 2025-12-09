@@ -145,3 +145,31 @@ beans query --schema
 - `--schema`: Print the GraphQL schema
 - `-v, --variables`: Query variables as JSON string
 - `-o, --operation`: Operation name for multi-operation documents
+
+**GraphQL Schema:**
+
+```graphql
+{{.GraphQLSchema}}```
+
+## Issue Types
+
+This project has the following issue types configured. Always specify a type with `-t` when creating beans:
+{{range .Types}}
+- **{{.Name}}**{{if .Description}}: {{.Description}}{{end}}
+{{- end}}
+
+## Statuses
+
+This project has the following statuses configured:
+{{range .Statuses}}
+- **{{.Name}}**{{if .Description}}: {{.Description}}{{end}}
+{{- end}}
+
+## Priorities
+
+Beans can have an optional priority. Use `-p` when creating or `--priority` when updating:
+{{range .Priorities}}
+- **{{.Name}}**{{if .Description}}: {{.Description}}{{end}}
+{{- end}}
+
+Beans without a priority are treated as `normal` priority for sorting purposes.
