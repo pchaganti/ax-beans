@@ -4,6 +4,20 @@ package model
 
 // Filter options for querying beans
 type BeanFilter struct {
+	// Full-text search across slug, title, and body using Bleve query syntax.
+	//
+	// Examples:
+	// - "login" - exact term match
+	// - "login~" - fuzzy match (1 edit distance)
+	// - "login~2" - fuzzy match (2 edit distance)
+	// - "log*" - wildcard prefix
+	// - "\"user login\"" - exact phrase
+	// - "user AND login" - both terms required
+	// - "user OR login" - either term
+	// - "slug:auth" - search only slug field
+	// - "title:login" - search only title field
+	// - "body:auth" - search only body field
+	Search *string `json:"search,omitempty"`
 	// Include only beans with these statuses (OR logic)
 	Status []string `json:"status,omitempty"`
 	// Exclude beans with these statuses

@@ -18,6 +18,7 @@ import (
 
 var (
 	listJSON       bool
+	listSearch     string
 	listStatus     []string
 	listNoStatus   []string
 	listType       []string
@@ -58,7 +59,21 @@ var listCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls"},
 	Short:   "List all beans",
-	Long:    `Lists all beans in the .beans directory.`,
+	Long: `Lists all beans in the .beans directory.
+
+Search Syntax (--search/-S):
+  The search flag supports Bleve query string syntax:
+
+  login          Exact term match
+  login~         Fuzzy match (1 edit distance, finds "loggin", "logins")
+  login~2        Fuzzy match (2 edit distance)
+  log*           Wildcard prefix match
+  "user login"   Exact phrase match
+  user AND login Both terms required
+  user OR login  Either term matches
+  slug:auth      Search only in slug field
+  title:login    Search only in title field
+  body:auth      Search only in body field`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Build GraphQL filter from CLI flags
 		filter := &model.BeanFilter{
@@ -74,6 +89,11 @@ var listCmd = &cobra.Command{
 			LinkedAs:        parseLinkFilters(listLinkedAs),
 			NoLinks:         parseLinkFilters(listNoLinks),
 			NoLinkedAs:      parseLinkFilters(listNoLinkedAs),
+		}
+
+		// Add search filter if provided
+		if listSearch != "" {
+			filter.Search = &listSearch
 		}
 
 		// Execute query via GraphQL resolver
@@ -308,6 +328,7 @@ func truncate(s string, maxLen int) string {
 
 func init() {
 	listCmd.Flags().BoolVar(&listJSON, "json", false, "Output as JSON")
+	listCmd.Flags().StringVarP(&listSearch, "search", "S", "", "Full-text search in title and body")
 	listCmd.Flags().StringArrayVarP(&listStatus, "status", "s", nil, "Filter by status (can be repeated)")
 	listCmd.Flags().StringArrayVar(&listNoStatus, "no-status", nil, "Exclude by status (can be repeated)")
 	listCmd.Flags().StringArrayVarP(&listType, "type", "t", nil, "Filter by type (can be repeated)")
