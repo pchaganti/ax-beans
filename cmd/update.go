@@ -32,21 +32,8 @@ var (
 var updateCmd = &cobra.Command{
 	Use:   "update <id>",
 	Short: "Update a bean's properties",
-	Long: `Updates one or more properties of an existing bean.
-
-Use flags to specify which properties to update:
-  --status           Change the status
-  --type             Change the type
-  --priority         Change the priority
-  --title            Change the title
-  --body             Change the body (use '-' to read from stdin)
-  --parent           Set parent bean ID
-  --remove-parent    Remove parent
-  --blocking         Add to blocking list (can be repeated)
-  --remove-blocking  Remove from blocking list (can be repeated)
-  --tag              Add a tag (can be repeated)
-  --remove-tag       Remove a tag (can be repeated)`,
-	Args: cobra.ExactArgs(1),
+	Long:  `Updates one or more properties of an existing bean.`,
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
 		resolver := &graph.Resolver{Core: core}
