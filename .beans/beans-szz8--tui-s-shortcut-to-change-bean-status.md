@@ -1,9 +1,10 @@
 ---
 title: 'TUI: ''s'' shortcut to change bean status'
-status: backlog
+status: completed
 type: feature
+priority: normal
 created_at: 2025-12-12T22:38:27Z
-updated_at: 2025-12-12T22:38:27Z
+updated_at: 2025-12-12T22:51:37Z
 parent: beans-xnp8
 ---
 

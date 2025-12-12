@@ -7,6 +7,7 @@ import (
 	"github.com/hmans/beans/internal/beancore"
 	"github.com/hmans/beans/internal/config"
 	"github.com/hmans/beans/internal/graph"
+	"github.com/hmans/beans/internal/graph/model"
 )
 
 // viewState represents which view is currently active
@@ -17,6 +18,7 @@ const (
 	viewDetail
 	viewTagPicker
 	viewParentPicker
+	viewStatusPicker
 )
 
 // beansChangedMsg is sent when beans change on disk (via file watcher)
@@ -47,6 +49,7 @@ type App struct {
 	detail       detailModel
 	tagPicker    tagPickerModel
 	parentPicker parentPickerModel
+	statusPicker statusPickerModel
 	history      []detailModel // stack of previous detail views for back navigation
 	core         *beancore.Core
 	resolver     *graph.Resolver
@@ -58,7 +61,7 @@ type App struct {
 	// Key chord state - tracks partial key sequences like "g" waiting for "t"
 	pendingKey string
 
-	// Modal state - tracks view behind parent picker modal
+	// Modal state - tracks view behind modal pickers
 	previousState viewState
 }
 
@@ -118,7 +121,7 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c":
 			return a, tea.Quit
 		case "q":
-			if a.state == viewDetail || a.state == viewTagPicker || a.state == viewParentPicker {
+			if a.state == viewDetail || a.state == viewTagPicker || a.state == viewParentPicker || a.state == viewStatusPicker {
 				return a, tea.Quit
 			}
 			// For list, only quit if not filtering
@@ -175,6 +178,35 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Return to previous view without making changes
 		a.state = a.previousState
 		return a, nil
+
+	case openStatusPickerMsg:
+		a.previousState = a.state
+		a.statusPicker = newStatusPickerModel(msg.beanID, msg.currentStatus, a.config, a.width, a.height)
+		a.state = viewStatusPicker
+		return a, a.statusPicker.Init()
+
+	case closeStatusPickerMsg:
+		a.state = a.previousState
+		return a, nil
+
+	case statusSelectedMsg:
+		// Update the bean's status via GraphQL mutation
+		_, err := a.resolver.Mutation().UpdateBean(context.Background(), msg.beanID, model.UpdateBeanInput{
+			Status: &msg.status,
+		})
+		if err != nil {
+			a.state = a.previousState
+			return a, nil
+		}
+		// Return to the previous view and refresh
+		a.state = a.previousState
+		if a.state == viewDetail {
+			updatedBean, _ := a.resolver.Query().Bean(context.Background(), msg.beanID)
+			if updatedBean != nil {
+				a.detail = newDetailModel(updatedBean, a.resolver, a.config, a.width, a.height)
+			}
+		}
+		return a, a.list.loadBeans
 
 	case parentSelectedMsg:
 		// Set the new parent via GraphQL mutation
@@ -237,6 +269,8 @@ func (a *App) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		a.tagPicker, cmd = a.tagPicker.Update(msg)
 	case viewParentPicker:
 		a.parentPicker, cmd = a.parentPicker.Update(msg)
+	case viewStatusPicker:
+		a.statusPicker, cmd = a.statusPicker.Update(msg)
 	}
 
 	return a, cmd
@@ -270,19 +304,23 @@ func (a *App) View() string {
 	case viewTagPicker:
 		return a.tagPicker.View()
 	case viewParentPicker:
-		// Render parent picker as a modal overlay on top of the previous view
-		var bgView string
-		switch a.previousState {
-		case viewList:
-			bgView = a.list.View()
-		case viewDetail:
-			bgView = a.detail.View()
-		default:
-			bgView = a.list.View()
-		}
-		return a.parentPicker.ModalView(bgView, a.width, a.height)
+		return a.parentPicker.ModalView(a.getBackgroundView(), a.width, a.height)
+	case viewStatusPicker:
+		return a.statusPicker.ModalView(a.getBackgroundView(), a.width, a.height)
 	}
 	return ""
+}
+
+// getBackgroundView returns the view to show behind modal pickers
+func (a *App) getBackgroundView() string {
+	switch a.previousState {
+	case viewList:
+		return a.list.View()
+	case viewDetail:
+		return a.detail.View()
+	default:
+		return a.list.View()
+	}
 }
 
 // Run starts the TUI application with file watching

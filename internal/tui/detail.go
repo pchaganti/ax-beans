@@ -324,6 +324,15 @@ func (m detailModel) Update(msg tea.Msg) (detailModel, tea.Cmd) {
 					currentParent: m.bean.Parent,
 				}
 			}
+
+		case "s":
+			// Open status picker
+			return m, func() tea.Msg {
+				return openStatusPickerMsg{
+					beanID:        m.bean.ID,
+					currentStatus: m.bean.Status,
+				}
+			}
 		}
 	}
 
@@ -392,7 +401,8 @@ func (m detailModel) View() string {
 		}
 		footer += helpKeyStyle.Render("enter") + " " + helpStyle.Render("go to") + "  "
 	}
-	footer += helpKeyStyle.Render("p") + " " + helpStyle.Render("parent") + "  " +
+	footer += helpKeyStyle.Render("s") + " " + helpStyle.Render("status") + "  " +
+		helpKeyStyle.Render("p") + " " + helpStyle.Render("parent") + "  " +
 		helpKeyStyle.Render("j/k") + " " + helpStyle.Render("scroll") + "  " +
 		helpKeyStyle.Render("esc") + " " + helpStyle.Render("back") + "  " +
 		helpKeyStyle.Render("q") + " " + helpStyle.Render("quit")
