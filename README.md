@@ -12,8 +12,6 @@ This gives your robot friends a juicy upgrade: now they get a complete view of y
 
 You've been programming all your life; now you get to be a product manager. Let's go! 🚀
 
-> **Warning**: As long as this project is still within the `0.1.x` version range, expect frequent small releases often containing breaking changes. I'm dogfooding Beans in my own projects (including Beans itself), so things generally work great, but every now and then I still need to turn things inside out. If you're serious about diving in, I would advise to wait for the upcoming `0.2.0` release.
-
 ## Features
 
 - Track tasks, bugs, features, and more right alongside your code.
