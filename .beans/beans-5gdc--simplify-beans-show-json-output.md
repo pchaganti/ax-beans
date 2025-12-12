@@ -1,10 +1,10 @@
 ---
 title: Simplify beans show --json output
-status: backlog
+status: completed
 type: bug
 priority: normal
 created_at: 2025-12-12T23:53:33Z
-updated_at: 2025-12-12T23:53:49Z
+updated_at: 2025-12-12T23:57:06Z
 parent: beans-xnp8
 ---
 

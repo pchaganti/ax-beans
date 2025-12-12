@@ -44,7 +44,7 @@ var showCmd = &cobra.Command{
 
 		// JSON output
 		if showJSON {
-			return output.Success(b, "")
+			return output.SuccessSingle(b)
 		}
 
 		// Raw markdown output (frontmatter + body)
