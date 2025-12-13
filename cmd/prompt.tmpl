@@ -20,8 +20,8 @@ If you identify something that should be changed or fixed after completing the u
 
 ## Core Rules
 
-- **Prefer `beans query` (GraphQL) for reading data** - It's flexible, efficient, and lets you fetch exactly what you need
-- **Use CLI commands for mutations** - `beans create` and `beans update` are simpler for single operations
+- **Use `beans query` for flexible data access** - Supports both queries and mutations via GraphQL
+- **CLI commands are simpler for common operations** - `beans create` and `beans update` are easier for single mutations
 - After compaction or clear, run `beans prime` to re-sync
 - Lean towards using sub-agents for interacting with beans
 
@@ -125,6 +125,15 @@ The `beans query` command executes GraphQL queries. This is the preferred way to
 beans query <<'EOF'
 { beans(filter: { type: ["bug"], excludeStatus: ["completed"] }) { id title priority } }
 EOF
+
+# Create a new bean
+beans query 'mutation { createBean(input: { title: "Fix bug", type: "bug", status: "todo" }) { id title } }'
+
+# Update a bean's status
+beans query 'mutation { updateBean(id: "beans-abc", input: { status: "completed" }) { id status } }'
+
+# Set a bean's parent
+beans query 'mutation { setParent(id: "beans-abc", parentId: "beans-xyz") { id parent { title } } }'
 
 # Print the full schema for reference
 beans query --schema
