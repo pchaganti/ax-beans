@@ -184,34 +184,14 @@ func RenderTree(nodes []*TreeNode, cfg *config.Config, maxIDWidth int, hasTags b
 		treeColWidth = maxIDWidth + maxDepth*treeIndent
 	}
 
-	// Column styles with widths for alignment
-	idStyle := lipgloss.NewStyle().Width(treeColWidth)
-	typeStyle := lipgloss.NewStyle().Width(12)
-	statusStyle := lipgloss.NewStyle().Width(14)
-	titleStyle := lipgloss.NewStyle().Width(50)
+	// Header with manual padding (lipgloss Width doesn't handle styled strings well)
 	headerCol := lipgloss.NewStyle().Foreground(ColorMuted)
+	idHeader := headerCol.Render("ID") + strings.Repeat(" ", treeColWidth-2)
+	typeHeader := headerCol.Render("TYPE") + strings.Repeat(" ", 12-4)
+	statusHeader := headerCol.Render("STATUS") + strings.Repeat(" ", 14-6)
 
-	// Header
-	var header string
-	var dividerWidth int
-	if hasTags {
-		header = lipgloss.JoinHorizontal(lipgloss.Top,
-			idStyle.Render(headerCol.Render("ID")),
-			typeStyle.Render(headerCol.Render("TYPE")),
-			statusStyle.Render(headerCol.Render("STATUS")),
-			titleStyle.Render(headerCol.Render("TITLE")),
-			headerCol.Render("TAGS"),
-		)
-		dividerWidth = treeColWidth + 12 + 14 + 50 + 24
-	} else {
-		header = lipgloss.JoinHorizontal(lipgloss.Top,
-			idStyle.Render(headerCol.Render("ID")),
-			typeStyle.Render(headerCol.Render("TYPE")),
-			statusStyle.Render(headerCol.Render("STATUS")),
-			headerCol.Render("TITLE"),
-		)
-		dividerWidth = treeColWidth + 12 + 14 + 50
-	}
+	header := idHeader + typeHeader + statusHeader + headerCol.Render("TITLE")
+	dividerWidth := treeColWidth + 12 + 14 + 50
 	sb.WriteString(header)
 	sb.WriteString("\n")
 	sb.WriteString(Muted.Render(strings.Repeat("─", dividerWidth)))
@@ -248,154 +228,45 @@ func renderNodes(sb *strings.Builder, nodes []*TreeNode, depth int, ancestry []b
 func renderNode(sb *strings.Builder, node *TreeNode, depth int, isLast bool, ancestry []bool, cfg *config.Config, treeColWidth int, hasTags bool) {
 	b := node.Bean
 
-	// Get status color from config
-	statusCfg := cfg.GetStatus(b.Status)
-	statusColor := "gray"
-	if statusCfg != nil {
-		statusColor = statusCfg.Color
-	}
-	isArchive := cfg.IsArchiveStatus(b.Status)
-
-	// Get type color from config
-	typeColor := ""
-	if typeCfg := cfg.GetType(b.Type); typeCfg != nil {
-		typeColor = typeCfg.Color
-	}
-
-	// Get priority color and render symbol
-	priorityColor := ""
-	if priorityCfg := cfg.GetPriority(b.Priority); priorityCfg != nil {
-		priorityColor = priorityCfg.Color
-	}
-	prioritySymbol := RenderPrioritySymbol(b.Priority, priorityColor)
-	if prioritySymbol != "" {
-		prioritySymbol += " "
-	}
-
-	// Column styles - fixed widths for alignment
-	typeStyle := lipgloss.NewStyle().Width(12)
-	statusStyle := lipgloss.NewStyle().Width(14)
-	titleStyle := lipgloss.NewStyle().Width(50)
-
-	// Build indentation and connector
-	// depth 0: no indent, no connector
-	// depth 1: connector only (├─ or └─)
-	// depth 2+: indent + connector
-	var indent string
-	var connector string
+	// Build tree prefix from ancestry
+	var prefix string
 	if depth > 0 {
-		// Build indent from ancestry - each level adds either │ or space
 		for _, wasLast := range ancestry {
 			if wasLast {
-				indent += treeSpace // parent was last child, no continuation line
+				prefix += treeSpace
 			} else {
-				indent += treePipe // parent has more siblings, show continuation line
+				prefix += treePipe
 			}
 		}
 		if isLast {
-			connector = treeLastBranch
+			prefix += treeLastBranch
 		} else {
-			connector = treeBranch
+			prefix += treeBranch
 		}
 	}
 
-	// Build the ID cell content: indent + connector + ID
-	var idText string
-	if node.Matched {
-		idText = ID.Render(b.ID)
-	} else {
-		// Dim unmatched (ancestor) beans
-		idText = Muted.Render(b.ID)
-	}
+	// Get colors from config
+	colors := cfg.GetBeanColors(b.Status, b.Type, b.Priority)
 
-	// Style the tree connector with subtle color
-	styledConnector := TreeLine.Render(indent + connector)
-
-	// Calculate visual width of indent + connector + ID (without ANSI codes)
-	visualWidth := len(indent) + runeWidth(connector) + len(b.ID)
-	// Pad to fixed width
-	padding := ""
-	if treeColWidth > visualWidth {
-		padding = strings.Repeat(" ", treeColWidth-visualWidth)
-	}
-	idCell := styledConnector + idText + padding
-
-	typeText := ""
-	if b.Type != "" {
-		if node.Matched {
-			typeText = RenderTypeText(b.Type, typeColor)
-		} else {
-			typeText = Muted.Render(b.Type)
-		}
-	}
-
-	var statusText string
-	if node.Matched {
-		statusText = RenderStatusTextWithColor(b.Status, statusColor, isArchive)
-	} else {
-		statusText = Muted.Render(b.Status)
-	}
-
-	var titleText string
-	// Account for priority symbol width when truncating (symbol + space = 2 chars)
-	maxTitleWidth := 50
-	if prioritySymbol != "" {
-		maxTitleWidth -= 2
-	}
-	title := truncateString(b.Title, maxTitleWidth)
-	if node.Matched {
-		titleText = prioritySymbol + title
-	} else {
-		titleText = Muted.Render(title)
-	}
-
-	var row string
-	if hasTags {
-		var tagsStr string
-		if node.Matched {
-			tagsStr = RenderTagsCompact(b.Tags, 1)
-		} else {
-			// For unmatched, just show muted tags
-			if len(b.Tags) > 0 {
-				tagsStr = Muted.Render(b.Tags[0])
-				if len(b.Tags) > 1 {
-					tagsStr += Muted.Render(" +" + string(rune('0'+len(b.Tags)-1)))
-				}
-			}
-		}
-
-		row = lipgloss.JoinHorizontal(lipgloss.Top,
-			idCell,
-			typeStyle.Render(typeText),
-			statusStyle.Render(statusText),
-			titleStyle.Render(titleText),
-			tagsStr,
-		)
-	} else {
-		row = lipgloss.JoinHorizontal(lipgloss.Top,
-			idCell,
-			typeStyle.Render(typeText),
-			statusStyle.Render(statusText),
-			titleText,
-		)
-	}
+	// Use shared RenderBeanRow function
+	row := RenderBeanRow(b.ID, b.Status, b.Type, b.Title, BeanRowConfig{
+		StatusColor:   colors.StatusColor,
+		TypeColor:     colors.TypeColor,
+		PriorityColor: colors.PriorityColor,
+		Priority:      b.Priority,
+		IsArchive:     colors.IsArchive,
+		MaxTitleWidth: 50,
+		ShowCursor:    false,
+		Tags:          b.Tags,
+		ShowTags:      hasTags,
+		MaxTags:       1,
+		TreePrefix:    prefix,
+		Dimmed:        !node.Matched,
+		IDColWidth:    treeColWidth,
+	})
 
 	sb.WriteString(row)
 	sb.WriteString("\n")
-}
-
-// truncateString truncates a string to maxLen, adding "..." if truncated.
-func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
-		return s
-	}
-	return s[:maxLen-3] + "..."
-}
-
-// runeWidth returns the visual width of a string (counting runes, not bytes).
-// This assumes all runes are single-width (which works for our tree connectors).
-func runeWidth(s string) int {
-	return len([]rune(s))
 }
 
 // FlatItem represents a flattened tree node with rendering context.
