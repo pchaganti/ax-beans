@@ -366,36 +366,39 @@ func CalculateResponsiveColumns(totalWidth int, hasTags bool) ResponsiveColumns 
 	// Base width without tags
 	baseWidth := cursorWidth + cols.ID + cols.Status + cols.Type
 
-	// Minimum title width we want to preserve (kept low to favor title space)
-	minTitleWidth := 20
+	// Minimum title width we want to preserve
+	minTitleWidth := 30
 
 	// Available space for tags + title
 	available := totalWidth - baseWidth
 
 	// Only show tags if we have them and there's enough room
-	// Use higher thresholds to give more space to titles
-	if hasTags && available > minTitleWidth+ColWidthTags+20 {
+	if hasTags && available > minTitleWidth+ColWidthTags {
 		cols.ShowTags = true
 
 		// Calculate how many tags we can show based on available space
-		// Be conservative - favor title width over showing more tags
-		spaceForTags := available - minTitleWidth - 20 // extra 20 for title breathing room
+		spaceForTags := available - minTitleWidth
 
-		if spaceForTags >= 70 {
-			// Lots of space: show 3 tags, wider column
-			cols.Tags = 50
+		if spaceForTags >= 80 {
+			// Lots of space: show all tags (up to 5)
+			cols.Tags = 70
+			cols.MaxTags = 5
+		} else if spaceForTags >= 60 {
+			// Good space: show 4 tags
+			cols.Tags = 55
+			cols.MaxTags = 4
+		} else if spaceForTags >= 45 {
+			// Moderate space: show 3 tags
+			cols.Tags = 42
 			cols.MaxTags = 3
-		} else if spaceForTags >= 55 {
-			// Good space: show 2 tags
-			cols.Tags = 38
+		} else if spaceForTags >= 35 {
+			// Limited space: show 2 tags
+			cols.Tags = 32
 			cols.MaxTags = 2
-		} else if spaceForTags >= ColWidthTags {
+		} else {
 			// Minimal: show 1 tag
 			cols.Tags = ColWidthTags
 			cols.MaxTags = 1
-		} else {
-			// Not enough room for tags
-			cols.ShowTags = false
 		}
 	}
 
