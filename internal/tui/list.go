@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strings"
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
@@ -443,38 +442,6 @@ func (m *listModel) updateDelegate() {
 	m.list.SetDelegate(delegate)
 }
 
-// buildColumnHeader creates the column header row matching the data layout
-func (m listModel) buildColumnHeader() string {
-	headerStyle := lipgloss.NewStyle().Foreground(ui.ColorMuted)
-
-	// Account for cursor column (2 chars: "▌" or " " + space)
-	cursorPad := "  "
-
-	// ID column width
-	idWidth := ui.ColWidthID
-	if m.idColWidth > 0 {
-		idWidth = m.idColWidth
-	}
-
-	// Build header with manual padding to match data columns
-	idHeader := headerStyle.Render("ID") + strings.Repeat(" ", idWidth-2)
-	typeHeader := headerStyle.Render("TYPE") + strings.Repeat(" ", ui.ColWidthType-4)
-	statusHeader := headerStyle.Render("STATUS") + strings.Repeat(" ", ui.ColWidthStatus-6)
-
-	header := cursorPad + idHeader + typeHeader + statusHeader + headerStyle.Render("TITLE")
-
-	if m.cols.ShowTags {
-		// Calculate title width to position TAGS header
-		baseWidth := idWidth + ui.ColWidthStatus + ui.ColWidthType + 4 + m.cols.Tags
-		titleWidth := max(0, m.width-2-baseWidth) // -2 for border
-		if titleWidth > 5 {
-			header += strings.Repeat(" ", titleWidth-5+3) + headerStyle.Render("TAGS")
-		}
-	}
-
-	return header
-}
-
 func (m listModel) View() string {
 	if m.err != nil {
 		return fmt.Sprintf("Error: %v\n\nPress q to quit.", m.err)
@@ -484,15 +451,12 @@ func (m listModel) View() string {
 		return "Loading..."
 	}
 
-	// Update title based on active filter, include column headers
-	var title string
+	// Update title based on active filter
 	if m.tagFilter != "" {
-		title = fmt.Sprintf("Beans [tag: %s]", m.tagFilter)
+		m.list.Title = fmt.Sprintf("Beans [tag: %s]", m.tagFilter)
 	} else {
-		title = "Beans"
+		m.list.Title = "Beans"
 	}
-	// Add column header row below title
-	m.list.Title = title + "\n" + m.buildColumnHeader()
 
 	// Simple bordered container
 	border := lipgloss.NewStyle().
