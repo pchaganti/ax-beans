@@ -28,7 +28,7 @@ func (r *beanResolver) BlockingIds(ctx context.Context, obj *bean.Bean) ([]strin
 }
 
 // BlockedBy is the resolver for the blockedBy field.
-func (r *beanResolver) BlockedBy(ctx context.Context, obj *bean.Bean) ([]*bean.Bean, error) {
+func (r *beanResolver) BlockedBy(ctx context.Context, obj *bean.Bean, filter *model.BeanFilter) ([]*bean.Bean, error) {
 	incoming := r.Core.FindIncomingLinks(obj.ID)
 	var result []*bean.Bean
 	for _, link := range incoming {
@@ -36,11 +36,11 @@ func (r *beanResolver) BlockedBy(ctx context.Context, obj *bean.Bean) ([]*bean.B
 			result = append(result, link.FromBean)
 		}
 	}
-	return result, nil
+	return ApplyFilter(result, filter, r.Core), nil
 }
 
 // Blocking is the resolver for the blocking field.
-func (r *beanResolver) Blocking(ctx context.Context, obj *bean.Bean) ([]*bean.Bean, error) {
+func (r *beanResolver) Blocking(ctx context.Context, obj *bean.Bean, filter *model.BeanFilter) ([]*bean.Bean, error) {
 	var result []*bean.Bean
 	for _, targetID := range obj.Blocking {
 		// Filter out broken links
@@ -48,7 +48,7 @@ func (r *beanResolver) Blocking(ctx context.Context, obj *bean.Bean) ([]*bean.Be
 			result = append(result, target)
 		}
 	}
-	return result, nil
+	return ApplyFilter(result, filter, r.Core), nil
 }
 
 // Parent is the resolver for the parent field.
@@ -65,7 +65,7 @@ func (r *beanResolver) Parent(ctx context.Context, obj *bean.Bean) (*bean.Bean, 
 }
 
 // Children is the resolver for the children field.
-func (r *beanResolver) Children(ctx context.Context, obj *bean.Bean) ([]*bean.Bean, error) {
+func (r *beanResolver) Children(ctx context.Context, obj *bean.Bean, filter *model.BeanFilter) ([]*bean.Bean, error) {
 	incoming := r.Core.FindIncomingLinks(obj.ID)
 	var result []*bean.Bean
 	for _, link := range incoming {
@@ -73,7 +73,7 @@ func (r *beanResolver) Children(ctx context.Context, obj *bean.Bean) ([]*bean.Be
 			result = append(result, link.FromBean)
 		}
 	}
-	return result, nil
+	return ApplyFilter(result, filter, r.Core), nil
 }
 
 // CreateBean is the resolver for the createBean field.
@@ -273,75 +273,7 @@ func (r *queryResolver) Beans(ctx context.Context, filter *model.BeanFilter) ([]
 		beans = r.Core.All()
 	}
 
-	if filter == nil {
-		return beans, nil
-	}
-
-	// Apply filters
-	result := beans
-
-	// Status filters
-	if len(filter.Status) > 0 {
-		result = filterByField(result, filter.Status, func(b *bean.Bean) string { return b.Status })
-	}
-	if len(filter.ExcludeStatus) > 0 {
-		result = excludeByField(result, filter.ExcludeStatus, func(b *bean.Bean) string { return b.Status })
-	}
-
-	// Type filters
-	if len(filter.Type) > 0 {
-		result = filterByField(result, filter.Type, func(b *bean.Bean) string { return b.Type })
-	}
-	if len(filter.ExcludeType) > 0 {
-		result = excludeByField(result, filter.ExcludeType, func(b *bean.Bean) string { return b.Type })
-	}
-
-	// Priority filters (empty priority treated as "normal")
-	if len(filter.Priority) > 0 {
-		result = filterByPriority(result, filter.Priority)
-	}
-	if len(filter.ExcludePriority) > 0 {
-		result = excludeByPriority(result, filter.ExcludePriority)
-	}
-
-	// Tag filters
-	if len(filter.Tags) > 0 {
-		result = filterByTags(result, filter.Tags)
-	}
-	if len(filter.ExcludeTags) > 0 {
-		result = excludeByTags(result, filter.ExcludeTags)
-	}
-
-	// Parent filters
-	if filter.HasParent != nil && *filter.HasParent {
-		result = filterByHasParent(result)
-	}
-	if filter.NoParent != nil && *filter.NoParent {
-		result = filterByNoParent(result)
-	}
-	if filter.ParentID != nil && *filter.ParentID != "" {
-		result = filterByParentID(result, *filter.ParentID)
-	}
-
-	// Blocking filters
-	if filter.HasBlocking != nil && *filter.HasBlocking {
-		result = filterByHasBlocking(result)
-	}
-	if filter.BlockingID != nil && *filter.BlockingID != "" {
-		result = filterByBlockingID(result, *filter.BlockingID)
-	}
-	if filter.NoBlocking != nil && *filter.NoBlocking {
-		result = filterByNoBlocking(result)
-	}
-	if filter.IsBlocked != nil {
-		if *filter.IsBlocked {
-			result = filterByIsBlocked(result, r.Core)
-		} else {
-			result = filterByNotBlocked(result, r.Core)
-		}
-	}
-
-	return result, nil
+	return ApplyFilter(beans, filter, r.Core), nil
 }
 
 // Bean returns BeanResolver implementation.

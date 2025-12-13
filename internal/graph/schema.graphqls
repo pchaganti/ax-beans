@@ -121,13 +121,13 @@ type Bean {
 
   # Computed relationship fields
   "Beans that block this one (incoming blocking links)"
-  blockedBy: [Bean!]!
+  blockedBy(filter: BeanFilter): [Bean!]!
   "Beans this one is blocking (resolved from blockingIds)"
-  blocking: [Bean!]!
+  blocking(filter: BeanFilter): [Bean!]!
   "Parent bean (resolved from parentId)"
   parent: Bean
   "Child beans (beans with this as parent)"
-  children: [Bean!]!
+  children(filter: BeanFilter): [Bean!]!
 }
 
 """

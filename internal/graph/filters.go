@@ -3,7 +3,81 @@ package graph
 import (
 	"github.com/hmans/beans/internal/bean"
 	"github.com/hmans/beans/internal/beancore"
+	"github.com/hmans/beans/internal/graph/model"
 )
+
+// ApplyFilter applies BeanFilter to a slice of beans and returns filtered results.
+// This is used by both the top-level beans query and relationship field resolvers.
+func ApplyFilter(beans []*bean.Bean, filter *model.BeanFilter, core *beancore.Core) []*bean.Bean {
+	if filter == nil {
+		return beans
+	}
+
+	result := beans
+
+	// Status filters
+	if len(filter.Status) > 0 {
+		result = filterByField(result, filter.Status, func(b *bean.Bean) string { return b.Status })
+	}
+	if len(filter.ExcludeStatus) > 0 {
+		result = excludeByField(result, filter.ExcludeStatus, func(b *bean.Bean) string { return b.Status })
+	}
+
+	// Type filters
+	if len(filter.Type) > 0 {
+		result = filterByField(result, filter.Type, func(b *bean.Bean) string { return b.Type })
+	}
+	if len(filter.ExcludeType) > 0 {
+		result = excludeByField(result, filter.ExcludeType, func(b *bean.Bean) string { return b.Type })
+	}
+
+	// Priority filters (empty priority treated as "normal")
+	if len(filter.Priority) > 0 {
+		result = filterByPriority(result, filter.Priority)
+	}
+	if len(filter.ExcludePriority) > 0 {
+		result = excludeByPriority(result, filter.ExcludePriority)
+	}
+
+	// Tag filters
+	if len(filter.Tags) > 0 {
+		result = filterByTags(result, filter.Tags)
+	}
+	if len(filter.ExcludeTags) > 0 {
+		result = excludeByTags(result, filter.ExcludeTags)
+	}
+
+	// Parent filters
+	if filter.HasParent != nil && *filter.HasParent {
+		result = filterByHasParent(result)
+	}
+	if filter.NoParent != nil && *filter.NoParent {
+		result = filterByNoParent(result)
+	}
+	if filter.ParentID != nil && *filter.ParentID != "" {
+		result = filterByParentID(result, *filter.ParentID)
+	}
+
+	// Blocking filters
+	if filter.HasBlocking != nil && *filter.HasBlocking {
+		result = filterByHasBlocking(result)
+	}
+	if filter.BlockingID != nil && *filter.BlockingID != "" {
+		result = filterByBlockingID(result, *filter.BlockingID)
+	}
+	if filter.NoBlocking != nil && *filter.NoBlocking {
+		result = filterByNoBlocking(result)
+	}
+	if filter.IsBlocked != nil {
+		if *filter.IsBlocked {
+			result = filterByIsBlocked(result, core)
+		} else {
+			result = filterByNotBlocked(result, core)
+		}
+	}
+
+	return result
+}
 
 // filterByField filters beans to include only those where getter returns a value in values (OR logic).
 func filterByField(beans []*bean.Bean, values []string, getter func(*bean.Bean) string) []*bean.Bean {

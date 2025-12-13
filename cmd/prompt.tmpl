@@ -86,6 +86,12 @@ Beans can have relationships to other beans. Use these to express dependencies a
 # Get a bean with its relationships
 beans query '{ bean(id: "abc") { title parent { id title } children { id title status } blockedBy { title } blocking { title } } }'
 
+# Filter children by status (e.g., only incomplete children of a milestone)
+beans query '{ bean(id: "abc") { title children(filter: { excludeStatus: ["completed", "scrapped"] }) { id title status } } }'
+
+# Find active blockers (exclude completed ones)
+beans query '{ bean(id: "abc") { blockedBy(filter: { excludeStatus: ["completed"] }) { id title } } }'
+
 # Find beans blocked by something
 beans query '{ beans(filter: { isBlocked: true }) { id title blockedBy { title } } }'
 

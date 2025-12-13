@@ -351,7 +351,7 @@ func TestBeanRelationships(t *testing.T) {
 
 	t.Run("children resolver", func(t *testing.T) {
 		br := resolver.Bean()
-		got, err := br.Children(ctx, parent)
+		got, err := br.Children(ctx, parent, nil)
 		if err != nil {
 			t.Fatalf("Children() error = %v", err)
 		}
@@ -362,7 +362,7 @@ func TestBeanRelationships(t *testing.T) {
 
 	t.Run("blockedBy resolver", func(t *testing.T) {
 		br := resolver.Bean()
-		got, err := br.BlockedBy(ctx, child1)
+		got, err := br.BlockedBy(ctx, child1, nil)
 		if err != nil {
 			t.Fatalf("BlockedBy() error = %v", err)
 		}
@@ -376,7 +376,7 @@ func TestBeanRelationships(t *testing.T) {
 
 	t.Run("blocks resolver", func(t *testing.T) {
 		br := resolver.Bean()
-		got, err := br.Blocking(ctx, blocker)
+		got, err := br.Blocking(ctx, blocker, nil)
 		if err != nil {
 			t.Fatalf("Blocks() error = %v", err)
 		}
@@ -875,6 +875,178 @@ func TestMutationDeleteBean(t *testing.T) {
 		_, err := mr.DeleteBean(ctx, "nonexistent")
 		if err == nil {
 			t.Error("DeleteBean() expected error for nonexistent bean")
+		}
+	})
+}
+
+func TestRelationshipFieldsWithFilter(t *testing.T) {
+	resolver, core := setupTestResolver(t)
+	ctx := context.Background()
+
+	// Create a parent (milestone) with multiple children (tasks) of different statuses
+	parent := &bean.Bean{
+		ID:     "parent-filter-test",
+		Title:  "Parent Milestone",
+		Type:   "milestone",
+		Status: "in-progress",
+	}
+	child1 := &bean.Bean{
+		ID:     "child-todo",
+		Title:  "Todo Task",
+		Type:   "task",
+		Status: "todo",
+		Parent: "parent-filter-test",
+	}
+	child2 := &bean.Bean{
+		ID:     "child-completed",
+		Title:  "Completed Task",
+		Type:   "task",
+		Status: "completed",
+		Parent: "parent-filter-test",
+	}
+	child3 := &bean.Bean{
+		ID:       "child-inprogress",
+		Title:    "In Progress Task",
+		Type:     "task",
+		Status:   "in-progress",
+		Parent:   "parent-filter-test",
+		Priority: "high",
+	}
+
+	// Create blocking relationships with different types
+	blocker1 := &bean.Bean{
+		ID:       "blocker-bug",
+		Title:    "Blocking Bug",
+		Type:     "bug",
+		Status:   "todo",
+		Blocking: []string{"child-todo"},
+	}
+	blocker2 := &bean.Bean{
+		ID:       "blocker-task",
+		Title:    "Blocking Task",
+		Type:     "task",
+		Status:   "completed",
+		Blocking: []string{"child-todo"},
+	}
+
+	for _, b := range []*bean.Bean{parent, child1, child2, child3, blocker1, blocker2} {
+		if err := core.Create(b); err != nil {
+			t.Fatalf("Failed to create bean %s: %v", b.ID, err)
+		}
+	}
+
+	br := resolver.Bean()
+
+	t.Run("children with status filter", func(t *testing.T) {
+		filter := &model.BeanFilter{
+			Status: []string{"todo"},
+		}
+		got, err := br.Children(ctx, parent, filter)
+		if err != nil {
+			t.Fatalf("Children() error = %v", err)
+		}
+		if len(got) != 1 {
+			t.Errorf("Children(filter status=todo) count = %d, want 1", len(got))
+		}
+		if len(got) > 0 && got[0].ID != "child-todo" {
+			t.Errorf("Children(filter status=todo)[0].ID = %q, want %q", got[0].ID, "child-todo")
+		}
+	})
+
+	t.Run("children with excludeStatus filter", func(t *testing.T) {
+		filter := &model.BeanFilter{
+			ExcludeStatus: []string{"completed"},
+		}
+		got, err := br.Children(ctx, parent, filter)
+		if err != nil {
+			t.Fatalf("Children() error = %v", err)
+		}
+		if len(got) != 2 {
+			t.Errorf("Children(filter excludeStatus=completed) count = %d, want 2", len(got))
+		}
+	})
+
+	t.Run("children with priority filter", func(t *testing.T) {
+		filter := &model.BeanFilter{
+			Priority: []string{"high"},
+		}
+		got, err := br.Children(ctx, parent, filter)
+		if err != nil {
+			t.Fatalf("Children() error = %v", err)
+		}
+		if len(got) != 1 {
+			t.Errorf("Children(filter priority=high) count = %d, want 1", len(got))
+		}
+		if len(got) > 0 && got[0].ID != "child-inprogress" {
+			t.Errorf("Children(filter priority=high)[0].ID = %q, want %q", got[0].ID, "child-inprogress")
+		}
+	})
+
+	t.Run("children with nil filter returns all", func(t *testing.T) {
+		got, err := br.Children(ctx, parent, nil)
+		if err != nil {
+			t.Fatalf("Children() error = %v", err)
+		}
+		if len(got) != 3 {
+			t.Errorf("Children(nil filter) count = %d, want 3", len(got))
+		}
+	})
+
+	t.Run("blockedBy with type filter", func(t *testing.T) {
+		filter := &model.BeanFilter{
+			Type: []string{"bug"},
+		}
+		got, err := br.BlockedBy(ctx, child1, filter)
+		if err != nil {
+			t.Fatalf("BlockedBy() error = %v", err)
+		}
+		if len(got) != 1 {
+			t.Errorf("BlockedBy(filter type=bug) count = %d, want 1", len(got))
+		}
+		if len(got) > 0 && got[0].ID != "blocker-bug" {
+			t.Errorf("BlockedBy(filter type=bug)[0].ID = %q, want %q", got[0].ID, "blocker-bug")
+		}
+	})
+
+	t.Run("blockedBy with excludeStatus filter", func(t *testing.T) {
+		filter := &model.BeanFilter{
+			ExcludeStatus: []string{"completed"},
+		}
+		got, err := br.BlockedBy(ctx, child1, filter)
+		if err != nil {
+			t.Fatalf("BlockedBy() error = %v", err)
+		}
+		if len(got) != 1 {
+			t.Errorf("BlockedBy(filter excludeStatus=completed) count = %d, want 1", len(got))
+		}
+		if len(got) > 0 && got[0].ID != "blocker-bug" {
+			t.Errorf("BlockedBy(filter excludeStatus=completed)[0].ID = %q, want %q", got[0].ID, "blocker-bug")
+		}
+	})
+
+	t.Run("blocking with status filter", func(t *testing.T) {
+		filter := &model.BeanFilter{
+			Status: []string{"todo"},
+		}
+		got, err := br.Blocking(ctx, blocker1, filter)
+		if err != nil {
+			t.Fatalf("Blocking() error = %v", err)
+		}
+		if len(got) != 1 {
+			t.Errorf("Blocking(filter status=todo) count = %d, want 1", len(got))
+		}
+	})
+
+	t.Run("blocking filter excludes all", func(t *testing.T) {
+		filter := &model.BeanFilter{
+			Status: []string{"completed"},
+		}
+		got, err := br.Blocking(ctx, blocker1, filter)
+		if err != nil {
+			t.Fatalf("Blocking() error = %v", err)
+		}
+		if len(got) != 0 {
+			t.Errorf("Blocking(filter status=completed) count = %d, want 0", len(got))
 		}
 	})
 }

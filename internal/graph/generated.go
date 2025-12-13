@@ -51,11 +51,11 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Bean struct {
-		BlockedBy   func(childComplexity int) int
-		Blocking    func(childComplexity int) int
+		BlockedBy   func(childComplexity int, filter *model.BeanFilter) int
+		Blocking    func(childComplexity int, filter *model.BeanFilter) int
 		BlockingIds func(childComplexity int) int
 		Body        func(childComplexity int) int
-		Children    func(childComplexity int) int
+		Children    func(childComplexity int, filter *model.BeanFilter) int
 		CreatedAt   func(childComplexity int) int
 		ID          func(childComplexity int) int
 		Parent      func(childComplexity int) int
@@ -88,10 +88,10 @@ type ComplexityRoot struct {
 type BeanResolver interface {
 	ParentID(ctx context.Context, obj *bean.Bean) (*string, error)
 	BlockingIds(ctx context.Context, obj *bean.Bean) ([]string, error)
-	BlockedBy(ctx context.Context, obj *bean.Bean) ([]*bean.Bean, error)
-	Blocking(ctx context.Context, obj *bean.Bean) ([]*bean.Bean, error)
+	BlockedBy(ctx context.Context, obj *bean.Bean, filter *model.BeanFilter) ([]*bean.Bean, error)
+	Blocking(ctx context.Context, obj *bean.Bean, filter *model.BeanFilter) ([]*bean.Bean, error)
 	Parent(ctx context.Context, obj *bean.Bean) (*bean.Bean, error)
-	Children(ctx context.Context, obj *bean.Bean) ([]*bean.Bean, error)
+	Children(ctx context.Context, obj *bean.Bean, filter *model.BeanFilter) ([]*bean.Bean, error)
 }
 type MutationResolver interface {
 	CreateBean(ctx context.Context, input model.CreateBeanInput) (*bean.Bean, error)
@@ -130,13 +130,23 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			break
 		}
 
-		return e.complexity.Bean.BlockedBy(childComplexity), true
+		args, err := ec.field_Bean_blockedBy_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Bean.BlockedBy(childComplexity, args["filter"].(*model.BeanFilter)), true
 	case "Bean.blocking":
 		if e.complexity.Bean.Blocking == nil {
 			break
 		}
 
-		return e.complexity.Bean.Blocking(childComplexity), true
+		args, err := ec.field_Bean_blocking_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Bean.Blocking(childComplexity, args["filter"].(*model.BeanFilter)), true
 	case "Bean.blockingIds":
 		if e.complexity.Bean.BlockingIds == nil {
 			break
@@ -154,7 +164,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			break
 		}
 
-		return e.complexity.Bean.Children(childComplexity), true
+		args, err := ec.field_Bean_children_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Bean.Children(childComplexity, args["filter"].(*model.BeanFilter)), true
 	case "Bean.createdAt":
 		if e.complexity.Bean.CreatedAt == nil {
 			break
@@ -444,6 +459,39 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 // endregion ************************** generated!.gotpl **************************
 
 // region    ***************************** args.gotpl *****************************
+
+func (ec *executionContext) field_Bean_blockedBy_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOBeanFilter2ᚖgithubᚗcomᚋhmansᚋbeansᚋinternalᚋgraphᚋmodelᚐBeanFilter)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Bean_blocking_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOBeanFilter2ᚖgithubᚗcomᚋhmansᚋbeansᚋinternalᚋgraphᚋmodelᚐBeanFilter)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Bean_children_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "filter", ec.unmarshalOBeanFilter2ᚖgithubᚗcomᚋhmansᚋbeansᚋinternalᚋgraphᚋmodelᚐBeanFilter)
+	if err != nil {
+		return nil, err
+	}
+	args["filter"] = arg0
+	return args, nil
+}
 
 func (ec *executionContext) field_Mutation_addBlocking_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
@@ -1000,7 +1048,8 @@ func (ec *executionContext) _Bean_blockedBy(ctx context.Context, field graphql.C
 		field,
 		ec.fieldContext_Bean_blockedBy,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Bean().BlockedBy(ctx, obj)
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Bean().BlockedBy(ctx, obj, fc.Args["filter"].(*model.BeanFilter))
 		},
 		nil,
 		ec.marshalNBean2ᚕᚖgithubᚗcomᚋhmansᚋbeansᚋinternalᚋbeanᚐBeanᚄ,
@@ -1009,7 +1058,7 @@ func (ec *executionContext) _Bean_blockedBy(ctx context.Context, field graphql.C
 	)
 }
 
-func (ec *executionContext) fieldContext_Bean_blockedBy(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Bean_blockedBy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Bean",
 		Field:      field,
@@ -1055,6 +1104,17 @@ func (ec *executionContext) fieldContext_Bean_blockedBy(_ context.Context, field
 			return nil, fmt.Errorf("no field named %q was found under type Bean", field.Name)
 		},
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Bean_blockedBy_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
 	return fc, nil
 }
 
@@ -1065,7 +1125,8 @@ func (ec *executionContext) _Bean_blocking(ctx context.Context, field graphql.Co
 		field,
 		ec.fieldContext_Bean_blocking,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Bean().Blocking(ctx, obj)
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Bean().Blocking(ctx, obj, fc.Args["filter"].(*model.BeanFilter))
 		},
 		nil,
 		ec.marshalNBean2ᚕᚖgithubᚗcomᚋhmansᚋbeansᚋinternalᚋbeanᚐBeanᚄ,
@@ -1074,7 +1135,7 @@ func (ec *executionContext) _Bean_blocking(ctx context.Context, field graphql.Co
 	)
 }
 
-func (ec *executionContext) fieldContext_Bean_blocking(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Bean_blocking(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Bean",
 		Field:      field,
@@ -1119,6 +1180,17 @@ func (ec *executionContext) fieldContext_Bean_blocking(_ context.Context, field 
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Bean", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Bean_blocking_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -1195,7 +1267,8 @@ func (ec *executionContext) _Bean_children(ctx context.Context, field graphql.Co
 		field,
 		ec.fieldContext_Bean_children,
 		func(ctx context.Context) (any, error) {
-			return ec.resolvers.Bean().Children(ctx, obj)
+			fc := graphql.GetFieldContext(ctx)
+			return ec.resolvers.Bean().Children(ctx, obj, fc.Args["filter"].(*model.BeanFilter))
 		},
 		nil,
 		ec.marshalNBean2ᚕᚖgithubᚗcomᚋhmansᚋbeansᚋinternalᚋbeanᚐBeanᚄ,
@@ -1204,7 +1277,7 @@ func (ec *executionContext) _Bean_children(ctx context.Context, field graphql.Co
 	)
 }
 
-func (ec *executionContext) fieldContext_Bean_children(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Bean_children(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Bean",
 		Field:      field,
@@ -1249,6 +1322,17 @@ func (ec *executionContext) fieldContext_Bean_children(_ context.Context, field 
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Bean", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Bean_children_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }

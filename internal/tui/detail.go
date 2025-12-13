@@ -542,7 +542,7 @@ func (m detailModel) resolveAllLinks() []resolvedLink {
 	beanResolver := m.resolver.Bean()
 
 	// Resolve outgoing links via GraphQL resolvers
-	if blocking, _ := beanResolver.Blocking(ctx, m.bean); blocking != nil {
+	if blocking, _ := beanResolver.Blocking(ctx, m.bean, nil); blocking != nil {
 		for _, b := range blocking {
 			links = append(links, resolvedLink{linkType: "blocking", bean: b, incoming: false})
 		}
@@ -552,12 +552,12 @@ func (m detailModel) resolveAllLinks() []resolvedLink {
 	}
 
 	// Resolve incoming links via GraphQL resolvers
-	if blockedBy, _ := beanResolver.BlockedBy(ctx, m.bean); blockedBy != nil {
+	if blockedBy, _ := beanResolver.BlockedBy(ctx, m.bean, nil); blockedBy != nil {
 		for _, b := range blockedBy {
 			links = append(links, resolvedLink{linkType: "blocking", bean: b, incoming: true})
 		}
 	}
-	if children, _ := beanResolver.Children(ctx, m.bean); children != nil {
+	if children, _ := beanResolver.Children(ctx, m.bean, nil); children != nil {
 		for _, b := range children {
 			links = append(links, resolvedLink{linkType: "parent", bean: b, incoming: true})
 		}
