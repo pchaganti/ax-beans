@@ -13,18 +13,18 @@ import (
 
 // prioritySelectedMsg is sent when a priority is selected from the picker
 type prioritySelectedMsg struct {
-	beanID   string
+	beanIDs  []string
 	priority string
 }
 
 // closePriorityPickerMsg is sent when the priority picker is cancelled
 type closePriorityPickerMsg struct{}
 
-// openPriorityPickerMsg requests opening the priority picker for a bean
+// openPriorityPickerMsg requests opening the priority picker for bean(s)
 type openPriorityPickerMsg struct {
-	beanID          string
-	beanTitle       string
-	currentPriority string
+	beanIDs         []string // IDs of beans to update
+	beanTitle       string   // Display title (single title or "N beans")
+	currentPriority string   // Only meaningful for single bean
 }
 
 // priorityItem wraps a priority to implement list.Item
@@ -75,14 +75,14 @@ func (d priorityItemDelegate) Render(w io.Writer, m list.Model, index int, listI
 // priorityPickerModel is the model for the priority picker view
 type priorityPickerModel struct {
 	list            list.Model
-	beanID          string
+	beanIDs         []string
 	beanTitle       string
 	currentPriority string
 	width           int
 	height          int
 }
 
-func newPriorityPickerModel(beanID, beanTitle, currentPriority string, cfg *config.Config, width, height int) priorityPickerModel {
+func newPriorityPickerModel(beanIDs []string, beanTitle, currentPriority string, cfg *config.Config, width, height int) priorityPickerModel {
 	// Get all priorities (hardcoded in config package)
 	priorities := config.DefaultPriorities
 
@@ -129,7 +129,7 @@ func newPriorityPickerModel(beanID, beanTitle, currentPriority string, cfg *conf
 
 	return priorityPickerModel{
 		list:            l,
-		beanID:          beanID,
+		beanIDs:         beanIDs,
 		beanTitle:       beanTitle,
 		currentPriority: currentPriority,
 		width:           width,
@@ -160,7 +160,7 @@ func (m priorityPickerModel) Update(msg tea.Msg) (priorityPickerModel, tea.Cmd) 
 			case "enter":
 				if item, ok := m.list.SelectedItem().(priorityItem); ok {
 					return m, func() tea.Msg {
-						return prioritySelectedMsg{beanID: m.beanID, priority: item.name}
+						return prioritySelectedMsg{beanIDs: m.beanIDs, priority: item.name}
 					}
 				}
 			case "esc", "backspace":
@@ -186,10 +186,16 @@ func (m priorityPickerModel) View() string {
 		description = item.description
 	}
 
+	// For multi-select, don't show individual bean ID
+	var beanID string
+	if len(m.beanIDs) == 1 {
+		beanID = m.beanIDs[0]
+	}
+
 	return renderPickerModal(pickerModalConfig{
 		Title:       "Select Priority",
 		BeanTitle:   m.beanTitle,
-		BeanID:      m.beanID,
+		BeanID:      beanID,
 		ListContent: m.list.View(),
 		Description: description,
 		Width:       m.width,

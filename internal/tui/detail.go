@@ -321,9 +321,9 @@ func (m detailModel) Update(msg tea.Msg) (detailModel, tea.Cmd) {
 			// Open parent picker
 			return m, func() tea.Msg {
 				return openParentPickerMsg{
-					beanID:        m.bean.ID,
+					beanIDs:       []string{m.bean.ID},
 					beanTitle:     m.bean.Title,
-					beanType:      m.bean.Type,
+					beanTypes:     []string{m.bean.Type},
 					currentParent: m.bean.Parent,
 				}
 			}
@@ -332,7 +332,7 @@ func (m detailModel) Update(msg tea.Msg) (detailModel, tea.Cmd) {
 			// Open status picker
 			return m, func() tea.Msg {
 				return openStatusPickerMsg{
-					beanID:        m.bean.ID,
+					beanIDs:       []string{m.bean.ID},
 					beanTitle:     m.bean.Title,
 					currentStatus: m.bean.Status,
 				}
@@ -342,7 +342,7 @@ func (m detailModel) Update(msg tea.Msg) (detailModel, tea.Cmd) {
 			// Open type picker
 			return m, func() tea.Msg {
 				return openTypePickerMsg{
-					beanID:      m.bean.ID,
+					beanIDs:     []string{m.bean.ID},
 					beanTitle:   m.bean.Title,
 					currentType: m.bean.Type,
 				}
@@ -352,7 +352,7 @@ func (m detailModel) Update(msg tea.Msg) (detailModel, tea.Cmd) {
 			// Open priority picker
 			return m, func() tea.Msg {
 				return openPriorityPickerMsg{
-					beanID:          m.bean.ID,
+					beanIDs:         []string{m.bean.ID},
 					beanTitle:       m.bean.Title,
 					currentPriority: m.bean.Priority,
 				}

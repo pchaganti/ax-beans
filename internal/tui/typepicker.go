@@ -13,18 +13,18 @@ import (
 
 // typeSelectedMsg is sent when a type is selected from the picker
 type typeSelectedMsg struct {
-	beanID   string
+	beanIDs  []string
 	beanType string
 }
 
 // closeTypePickerMsg is sent when the type picker is cancelled
 type closeTypePickerMsg struct{}
 
-// openTypePickerMsg requests opening the type picker for a bean
+// openTypePickerMsg requests opening the type picker for bean(s)
 type openTypePickerMsg struct {
-	beanID      string
-	beanTitle   string
-	currentType string
+	beanIDs     []string // IDs of beans to update
+	beanTitle   string   // Display title (single title or "N beans")
+	currentType string   // Only meaningful for single bean
 }
 
 // typeItem wraps a type to implement list.Item
@@ -74,14 +74,14 @@ func (d typeItemDelegate) Render(w io.Writer, m list.Model, index int, listItem 
 // typePickerModel is the model for the type picker view
 type typePickerModel struct {
 	list        list.Model
-	beanID      string
+	beanIDs     []string
 	beanTitle   string
 	currentType string
 	width       int
 	height      int
 }
 
-func newTypePickerModel(beanID, beanTitle, currentType string, cfg *config.Config, width, height int) typePickerModel {
+func newTypePickerModel(beanIDs []string, beanTitle, currentType string, cfg *config.Config, width, height int) typePickerModel {
 	// Get all types (hardcoded in config package)
 	types := config.DefaultTypes
 
@@ -128,7 +128,7 @@ func newTypePickerModel(beanID, beanTitle, currentType string, cfg *config.Confi
 
 	return typePickerModel{
 		list:        l,
-		beanID:      beanID,
+		beanIDs:     beanIDs,
 		beanTitle:   beanTitle,
 		currentType: currentType,
 		width:       width,
@@ -159,7 +159,7 @@ func (m typePickerModel) Update(msg tea.Msg) (typePickerModel, tea.Cmd) {
 			case "enter":
 				if item, ok := m.list.SelectedItem().(typeItem); ok {
 					return m, func() tea.Msg {
-						return typeSelectedMsg{beanID: m.beanID, beanType: item.name}
+						return typeSelectedMsg{beanIDs: m.beanIDs, beanType: item.name}
 					}
 				}
 			case "esc", "backspace":
@@ -185,10 +185,16 @@ func (m typePickerModel) View() string {
 		description = item.description
 	}
 
+	// For multi-select, don't show individual bean ID
+	var beanID string
+	if len(m.beanIDs) == 1 {
+		beanID = m.beanIDs[0]
+	}
+
 	return renderPickerModal(pickerModalConfig{
 		Title:       "Select Type",
 		BeanTitle:   m.beanTitle,
-		BeanID:      m.beanID,
+		BeanID:      beanID,
 		ListContent: m.list.View(),
 		Description: description,
 		Width:       m.width,

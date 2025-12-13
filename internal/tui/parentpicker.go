@@ -19,8 +19,8 @@ import (
 
 // parentSelectedMsg is sent when a parent is selected from the picker
 type parentSelectedMsg struct {
-	beanID   string // the bean being modified
-	parentID string // the new parent ID (empty string to clear parent)
+	beanIDs  []string // the beans being modified
+	parentID string   // the new parent ID (empty string to clear parent)
 }
 
 // closeParentPickerMsg is sent when the parent picker is cancelled
@@ -84,35 +84,56 @@ func (d parentItemDelegate) Render(w io.Writer, m list.Model, index int, listIte
 // parentPickerModel is the model for the parent picker view
 type parentPickerModel struct {
 	list          list.Model
-	beanID        string // the bean we're setting the parent for
-	beanTitle     string // the bean's title
-	beanType      string // type of the bean (to filter eligible parents)
-	currentParent string // current parent ID (to highlight)
+	beanIDs       []string // the beans we're setting the parent for
+	beanTitle     string   // display title (single title or "N selected beans")
+	beanTypes     []string // types of the beans (to filter eligible parents)
+	currentParent string   // current parent ID (to highlight, only for single bean)
 	width         int
 	height        int
 }
 
-func newParentPickerModel(beanID, beanTitle, beanType, currentParent string, resolver *graph.Resolver, cfg *config.Config, width, height int) parentPickerModel {
-	// Get valid parent types for this bean type
-	validParentTypes := beancore.ValidParentTypes(beanType)
+func newParentPickerModel(beanIDs []string, beanTitle string, beanTypes []string, currentParent string, resolver *graph.Resolver, cfg *config.Config, width, height int) parentPickerModel {
+	// Get valid parent types - for multi-select, find types valid for ALL beans
+	var validParentTypes []string
+	for i, beanType := range beanTypes {
+		typeParents := beancore.ValidParentTypes(beanType)
+		if i == 0 {
+			validParentTypes = typeParents
+		} else {
+			// Intersect with existing valid types
+			validParentTypes = intersectStrings(validParentTypes, typeParents)
+		}
+	}
 
 	// Fetch all beans and filter to eligible parents
 	allBeans, _ := resolver.Query().Beans(context.Background(), nil)
 
-	// Filter to eligible parents:
-	// 1. Must be of a valid parent type
-	// 2. Must not be the bean itself
-	// 3. Must not be a descendant of the bean (to prevent cycles)
-	descendants := collectDescendants(beanID, allBeans)
+	// Collect all descendants of all selected beans (to prevent cycles)
+	allDescendants := make(map[string]bool)
+	for _, beanID := range beanIDs {
+		for descID := range collectDescendants(beanID, allBeans) {
+			allDescendants[descID] = true
+		}
+	}
 
+	// Create set of selected bean IDs for quick lookup
+	selectedSet := make(map[string]bool)
+	for _, id := range beanIDs {
+		selectedSet[id] = true
+	}
+
+	// Filter to eligible parents:
+	// 1. Must be of a valid parent type for ALL selected beans
+	// 2. Must not be any of the selected beans
+	// 3. Must not be a descendant of any selected bean (to prevent cycles)
 	var eligibleBeans []*bean.Bean
 	for _, b := range allBeans {
-		// Skip self
-		if b.ID == beanID {
+		// Skip selected beans
+		if selectedSet[b.ID] {
 			continue
 		}
 		// Skip descendants (would create cycle)
-		if descendants[b.ID] {
+		if allDescendants[b.ID] {
 			continue
 		}
 		// Check if type is valid
@@ -185,13 +206,28 @@ func newParentPickerModel(beanID, beanTitle, beanType, currentParent string, res
 
 	return parentPickerModel{
 		list:          l,
-		beanID:        beanID,
+		beanIDs:       beanIDs,
 		beanTitle:     beanTitle,
-		beanType:      beanType,
+		beanTypes:     beanTypes,
 		currentParent: currentParent,
 		width:         width,
 		height:        height,
 	}
+}
+
+// intersectStrings returns the intersection of two string slices
+func intersectStrings(a, b []string) []string {
+	set := make(map[string]bool)
+	for _, s := range a {
+		set[s] = true
+	}
+	var result []string
+	for _, s := range b {
+		if set[s] {
+			result = append(result, s)
+		}
+	}
+	return result
 }
 
 // collectDescendants returns a set of all bean IDs that are descendants of the given bean
@@ -245,11 +281,11 @@ func (m parentPickerModel) Update(msg tea.Msg) (parentPickerModel, tea.Cmd) {
 				switch item := m.list.SelectedItem().(type) {
 				case clearParentItem:
 					return m, func() tea.Msg {
-						return parentSelectedMsg{beanID: m.beanID, parentID: ""}
+						return parentSelectedMsg{beanIDs: m.beanIDs, parentID: ""}
 					}
 				case parentItem:
 					return m, func() tea.Msg {
-						return parentSelectedMsg{beanID: m.beanID, parentID: item.bean.ID}
+						return parentSelectedMsg{beanIDs: m.beanIDs, parentID: item.bean.ID}
 					}
 				}
 			case "esc", "backspace":
@@ -270,10 +306,16 @@ func (m parentPickerModel) View() string {
 		return "Loading..."
 	}
 
+	// For multi-select, don't show individual bean ID
+	var beanID string
+	if len(m.beanIDs) == 1 {
+		beanID = m.beanIDs[0]
+	}
+
 	return renderPickerModal(pickerModalConfig{
 		Title:       "Select Parent",
 		BeanTitle:   m.beanTitle,
-		BeanID:      m.beanID,
+		BeanID:      beanID,
 		ListContent: m.list.View(),
 		Width:       m.width,
 		WidthPct:    60,

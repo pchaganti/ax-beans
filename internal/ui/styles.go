@@ -276,20 +276,28 @@ func RenderPriorityText(priority, color string) string {
 	return style.Render(priority)
 }
 
+// GetPrioritySymbol returns the raw symbol for a priority without styling.
+// Returns empty string for normal/empty priority.
+func GetPrioritySymbol(priority string) string {
+	switch priority {
+	case "critical":
+		return "‼"
+	case "high":
+		return "!"
+	case "low":
+		return "↓"
+	case "deferred":
+		return "→"
+	default:
+		return ""
+	}
+}
+
 // RenderPrioritySymbol returns a compact symbol for priority (used in TUI).
 // Returns empty string for normal/empty priority.
 func RenderPrioritySymbol(priority, color string) string {
-	var symbol string
-	switch priority {
-	case "critical":
-		symbol = "‼"
-	case "high":
-		symbol = "!"
-	case "low":
-		symbol = "↓"
-	case "deferred":
-		symbol = "→"
-	default:
+	symbol := GetPrioritySymbol(priority)
+	if symbol == "" {
 		return ""
 	}
 
@@ -311,6 +319,7 @@ type BeanRowConfig struct {
 	MaxTitleWidth int  // 0 means no truncation
 	ShowCursor    bool // Show selection cursor
 	IsSelected    bool
+	IsMarked      bool     // Marked for multi-select batch operations
 	Tags          []string // Tags to display (optional)
 	ShowTags      bool     // Whether to show tags column
 	TagsColWidth  int      // Width of tags column (0 = default)
@@ -415,10 +424,16 @@ func RenderBeanRow(id, status, typeName, title string, cfg BeanRowConfig) string
 		maxTags = cfg.MaxTags
 	}
 
-	// Build columns - apply dimming if needed
+	// Highlight style for marked rows
+	highlightStyle := lipgloss.NewStyle().Foreground(ColorWarning)
+
+	// Build columns - apply dimming or highlight as needed
 	var idCol string
 	if cfg.Dimmed {
 		idCol = idStyle.Render(Muted.Render(cfg.TreePrefix) + Muted.Render(id))
+	} else if cfg.IsMarked {
+		// Only highlight the ID when marked
+		idCol = idStyle.Render(highlightStyle.Render(cfg.TreePrefix) + highlightStyle.Render(id))
 	} else {
 		idCol = idStyle.Render(TreeLine.Render(cfg.TreePrefix) + ID.Render(id))
 	}
@@ -479,10 +494,10 @@ func RenderBeanRow(id, status, typeName, title string, cfg BeanRowConfig) string
 	var titleStyled string
 	if cfg.ShowCursor {
 		if cfg.IsSelected {
-			cursor = lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true).Render("▌") + " "
+			cursor = lipgloss.NewStyle().Foreground(ColorPrimary).Bold(true).Render("▌")
 			titleStyled = lipgloss.NewStyle().Bold(true).Foreground(ColorPrimary).Render(displayTitle)
 		} else {
-			cursor = "  "
+			cursor = " "
 			if cfg.Dimmed {
 				titleStyled = Muted.Render(displayTitle)
 			} else {

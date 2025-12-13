@@ -29,11 +29,12 @@ func (i beanItem) FilterValue() string { return i.bean.Title + " " + i.bean.ID }
 
 // itemDelegate handles rendering of list items
 type itemDelegate struct {
-	cfg        *config.Config
-	hasTags    bool
-	width      int
-	cols       ui.ResponsiveColumns // cached responsive columns
-	idColWidth int                  // ID column width (accounts for tree prefix)
+	cfg           *config.Config
+	hasTags       bool
+	width         int
+	cols          ui.ResponsiveColumns // cached responsive columns
+	idColWidth    int                  // ID column width (accounts for tree prefix)
+	selectedBeans *map[string]bool     // pointer to marked beans for multi-select
 }
 
 func newItemDelegate(cfg *config.Config) itemDelegate {
@@ -64,6 +65,12 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 	}
 	maxTitleWidth := max(0, m.Width()-baseWidth)
 
+	// Check if bean is marked for multi-select
+	var isMarked bool
+	if d.selectedBeans != nil {
+		isMarked = (*d.selectedBeans)[item.bean.ID]
+	}
+
 	str := ui.RenderBeanRow(
 		item.bean.ID,
 		item.bean.Status,
@@ -78,6 +85,7 @@ func (d itemDelegate) Render(w io.Writer, m list.Model, index int, listItem list
 			MaxTitleWidth: maxTitleWidth,
 			ShowCursor:    true,
 			IsSelected:    index == m.Index(),
+			IsMarked:      isMarked,
 			Tags:          item.bean.Tags,
 			ShowTags:      d.cols.ShowTags,
 			TagsColWidth:  d.cols.Tags,
@@ -107,10 +115,14 @@ type listModel struct {
 
 	// Active filters
 	tagFilter string // if set, only show beans with this tag
+
+	// Multi-select state
+	selectedBeans map[string]bool // IDs of beans marked for multi-edit
 }
 
 func newListModel(resolver *graph.Resolver, cfg *config.Config) listModel {
-	delegate := newItemDelegate(cfg)
+	selectedBeans := make(map[string]bool)
+	delegate := itemDelegate{cfg: cfg, selectedBeans: &selectedBeans}
 
 	l := list.New([]list.Item{}, delegate, 0, 0)
 	l.Title = "Beans"
@@ -123,9 +135,10 @@ func newListModel(resolver *graph.Resolver, cfg *config.Config) listModel {
 	l.Styles.FilterCursor = lipgloss.NewStyle().Foreground(ui.ColorPrimary)
 
 	return listModel{
-		list:     l,
-		resolver: resolver,
-		config:   cfg,
+		list:          l,
+		resolver:      resolver,
+		config:        cfg,
+		selectedBeans: selectedBeans,
 	}
 }
 
@@ -251,6 +264,16 @@ func (m listModel) Update(msg tea.Msg) (listModel, tea.Cmd) {
 	case tea.KeyMsg:
 		if m.list.FilterState() != list.Filtering {
 			switch msg.String() {
+			case " ":
+				// Toggle selection for multi-select
+				if item, ok := m.list.SelectedItem().(beanItem); ok {
+					if m.selectedBeans[item.bean.ID] {
+						delete(m.selectedBeans, item.bean.ID)
+					} else {
+						m.selectedBeans[item.bean.ID] = true
+					}
+				}
+				return m, nil
 			case "enter":
 				if item, ok := m.list.SelectedItem().(beanItem); ok {
 					return m, func() tea.Msg {
@@ -258,45 +281,102 @@ func (m listModel) Update(msg tea.Msg) (listModel, tea.Cmd) {
 					}
 				}
 			case "p":
-				// Open parent picker for selected bean
-				if item, ok := m.list.SelectedItem().(beanItem); ok {
+				// Open parent picker for selected bean(s)
+				if len(m.selectedBeans) > 0 {
+					// Multi-select mode
+					ids := make([]string, 0, len(m.selectedBeans))
+					types := make([]string, 0, len(m.selectedBeans))
+					for id := range m.selectedBeans {
+						ids = append(ids, id)
+						// Find the bean to get its type
+						for _, item := range m.list.Items() {
+							if bi, ok := item.(beanItem); ok && bi.bean.ID == id {
+								types = append(types, bi.bean.Type)
+								break
+							}
+						}
+					}
 					return m, func() tea.Msg {
 						return openParentPickerMsg{
-							beanID:        item.bean.ID,
+							beanIDs:   ids,
+							beanTitle: fmt.Sprintf("%d selected beans", len(ids)),
+							beanTypes: types,
+						}
+					}
+				} else if item, ok := m.list.SelectedItem().(beanItem); ok {
+					return m, func() tea.Msg {
+						return openParentPickerMsg{
+							beanIDs:       []string{item.bean.ID},
 							beanTitle:     item.bean.Title,
-							beanType:      item.bean.Type,
+							beanTypes:     []string{item.bean.Type},
 							currentParent: item.bean.Parent,
 						}
 					}
 				}
 			case "s":
-				// Open status picker for selected bean
-				if item, ok := m.list.SelectedItem().(beanItem); ok {
+				// Open status picker for selected bean(s)
+				if len(m.selectedBeans) > 0 {
+					// Multi-select mode
+					ids := make([]string, 0, len(m.selectedBeans))
+					for id := range m.selectedBeans {
+						ids = append(ids, id)
+					}
 					return m, func() tea.Msg {
 						return openStatusPickerMsg{
-							beanID:        item.bean.ID,
+							beanIDs:   ids,
+							beanTitle: fmt.Sprintf("%d selected beans", len(ids)),
+						}
+					}
+				} else if item, ok := m.list.SelectedItem().(beanItem); ok {
+					return m, func() tea.Msg {
+						return openStatusPickerMsg{
+							beanIDs:       []string{item.bean.ID},
 							beanTitle:     item.bean.Title,
 							currentStatus: item.bean.Status,
 						}
 					}
 				}
 			case "t":
-				// Open type picker for selected bean
-				if item, ok := m.list.SelectedItem().(beanItem); ok {
+				// Open type picker for selected bean(s)
+				if len(m.selectedBeans) > 0 {
+					// Multi-select mode
+					ids := make([]string, 0, len(m.selectedBeans))
+					for id := range m.selectedBeans {
+						ids = append(ids, id)
+					}
 					return m, func() tea.Msg {
 						return openTypePickerMsg{
-							beanID:      item.bean.ID,
+							beanIDs:   ids,
+							beanTitle: fmt.Sprintf("%d selected beans", len(ids)),
+						}
+					}
+				} else if item, ok := m.list.SelectedItem().(beanItem); ok {
+					return m, func() tea.Msg {
+						return openTypePickerMsg{
+							beanIDs:     []string{item.bean.ID},
 							beanTitle:   item.bean.Title,
 							currentType: item.bean.Type,
 						}
 					}
 				}
 			case "P":
-				// Open priority picker for selected bean
-				if item, ok := m.list.SelectedItem().(beanItem); ok {
+				// Open priority picker for selected bean(s)
+				if len(m.selectedBeans) > 0 {
+					// Multi-select mode
+					ids := make([]string, 0, len(m.selectedBeans))
+					for id := range m.selectedBeans {
+						ids = append(ids, id)
+					}
 					return m, func() tea.Msg {
 						return openPriorityPickerMsg{
-							beanID:          item.bean.ID,
+							beanIDs:   ids,
+							beanTitle: fmt.Sprintf("%d selected beans", len(ids)),
+						}
+					}
+				} else if item, ok := m.list.SelectedItem().(beanItem); ok {
+					return m, func() tea.Msg {
+						return openPriorityPickerMsg{
+							beanIDs:         []string{item.bean.ID},
 							beanTitle:       item.bean.Title,
 							currentPriority: item.bean.Priority,
 						}
@@ -329,7 +409,12 @@ func (m listModel) Update(msg tea.Msg) (listModel, tea.Cmd) {
 					}
 				}
 			case "esc", "backspace":
-				// If we have an active filter, clear it instead of quitting
+				// First clear selection if any beans are selected
+				if len(m.selectedBeans) > 0 {
+					clear(m.selectedBeans)
+					return m, nil
+				}
+				// Then clear active filter if any
 				if m.hasActiveFilter() {
 					return m, func() tea.Msg {
 						return clearFilterMsg{}
@@ -347,11 +432,12 @@ func (m listModel) Update(msg tea.Msg) (listModel, tea.Cmd) {
 // updateDelegate updates the list delegate with current responsive columns
 func (m *listModel) updateDelegate() {
 	delegate := itemDelegate{
-		cfg:        m.config,
-		hasTags:    m.hasTags,
-		width:      m.width,
-		cols:       m.cols,
-		idColWidth: m.idColWidth,
+		cfg:           m.config,
+		hasTags:       m.hasTags,
+		width:         m.width,
+		cols:          m.cols,
+		idColWidth:    m.idColWidth,
+		selectedBeans: &m.selectedBeans,
 	}
 	m.list.SetDelegate(delegate)
 }
@@ -381,10 +467,28 @@ func (m listModel) View() string {
 
 	content := border.Render(m.list.View())
 
-	// Footer - show different help based on filter state
+	// Footer - show different help based on filter/selection state
 	var help string
-	if m.hasActiveFilter() {
-		help = helpKeyStyle.Render("enter") + " " + helpStyle.Render("view") + "  " +
+
+	// Show selection count if any beans are selected
+	var selectionPrefix string
+	if len(m.selectedBeans) > 0 {
+		selectionStyle := lipgloss.NewStyle().Foreground(ui.ColorWarning).Bold(true)
+		selectionPrefix = selectionStyle.Render(fmt.Sprintf("(%d selected) ", len(m.selectedBeans)))
+	}
+
+	if len(m.selectedBeans) > 0 {
+		// When beans are selected, show esc to clear selection
+		help = helpKeyStyle.Render("space") + " " + helpStyle.Render("toggle") + "  " +
+			helpKeyStyle.Render("s") + " " + helpStyle.Render("status") + "  " +
+			helpKeyStyle.Render("t") + " " + helpStyle.Render("type") + "  " +
+			helpKeyStyle.Render("P") + " " + helpStyle.Render("priority") + "  " +
+			helpKeyStyle.Render("esc") + " " + helpStyle.Render("clear selection") + "  " +
+			helpKeyStyle.Render("?") + " " + helpStyle.Render("help") + "  " +
+			helpKeyStyle.Render("q") + " " + helpStyle.Render("quit")
+	} else if m.hasActiveFilter() {
+		help = helpKeyStyle.Render("space") + " " + helpStyle.Render("select") + "  " +
+			helpKeyStyle.Render("enter") + " " + helpStyle.Render("view") + "  " +
 			helpKeyStyle.Render("c") + " " + helpStyle.Render("create") + "  " +
 			helpKeyStyle.Render("e") + " " + helpStyle.Render("edit") + "  " +
 			helpKeyStyle.Render("s") + " " + helpStyle.Render("status") + "  " +
@@ -396,7 +500,8 @@ func (m listModel) View() string {
 			helpKeyStyle.Render("?") + " " + helpStyle.Render("help") + "  " +
 			helpKeyStyle.Render("q") + " " + helpStyle.Render("quit")
 	} else {
-		help = helpKeyStyle.Render("enter") + " " + helpStyle.Render("view") + "  " +
+		help = helpKeyStyle.Render("space") + " " + helpStyle.Render("select") + "  " +
+			helpKeyStyle.Render("enter") + " " + helpStyle.Render("view") + "  " +
 			helpKeyStyle.Render("c") + " " + helpStyle.Render("create") + "  " +
 			helpKeyStyle.Render("e") + " " + helpStyle.Render("edit") + "  " +
 			helpKeyStyle.Render("s") + " " + helpStyle.Render("status") + "  " +
@@ -409,6 +514,6 @@ func (m listModel) View() string {
 			helpKeyStyle.Render("q") + " " + helpStyle.Render("quit")
 	}
 
-	return content + "\n" + help
+	return content + "\n" + selectionPrefix + help
 }
 
