@@ -199,7 +199,7 @@ priority: high
 			name: "with deferred priority",
 			input: `---
 title: Later Task
-status: backlog
+status: draft
 priority: deferred
 ---`,
 			expectedPriority: "deferred",

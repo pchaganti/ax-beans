@@ -1,6 +1,6 @@
 ---
 title: beans release - Release management integration
-status: backlog
+status: draft
 type: feature
 tags:
     - idea

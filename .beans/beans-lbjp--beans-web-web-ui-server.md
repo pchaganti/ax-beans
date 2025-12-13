@@ -1,6 +1,6 @@
 ---
 title: beans web - Web UI server
-status: backlog
+status: draft
 type: feature
 tags:
     - idea

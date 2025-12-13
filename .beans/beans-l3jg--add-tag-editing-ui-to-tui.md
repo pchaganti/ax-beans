@@ -1,6 +1,6 @@
 ---
 title: Add tag editing UI to TUI
-status: backlog
+status: draft
 type: feature
 created_at: 2025-12-12T22:58:14Z
 updated_at: 2025-12-12T22:58:14Z

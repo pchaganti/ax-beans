@@ -172,7 +172,7 @@ var Header = lipgloss.NewStyle().
 // RenderStatus returns a styled status badge based on the status string (legacy, uses hardcoded colors)
 func RenderStatus(status string) string {
 	switch status {
-	case "todo", "backlog":
+	case "todo", "draft":
 		return StatusOpen.Render(status)
 	case "completed", "scrapped":
 		return StatusDone.Render(status)
@@ -186,7 +186,7 @@ func RenderStatus(status string) string {
 // RenderStatusText returns styled status text (for tables, no background) (legacy, uses hardcoded colors)
 func RenderStatusText(status string) string {
 	switch status {
-	case "todo", "backlog":
+	case "todo", "draft":
 		return StatusOpenText.Render(status)
 	case "completed", "scrapped":
 		return StatusDoneText.Render(status)

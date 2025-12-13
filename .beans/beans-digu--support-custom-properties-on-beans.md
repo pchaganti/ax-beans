@@ -1,6 +1,6 @@
 ---
 title: Support custom properties on beans
-status: backlog
+status: draft
 type: feature
 created_at: 2025-12-13T00:52:24Z
 updated_at: 2025-12-13T00:52:24Z

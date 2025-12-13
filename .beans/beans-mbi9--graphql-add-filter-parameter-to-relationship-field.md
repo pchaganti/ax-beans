@@ -1,6 +1,6 @@
 ---
 title: 'GraphQL: add filter parameter to relationship fields'
-status: backlog
+status: draft
 type: feature
 created_at: 2025-12-13T00:49:39Z
 updated_at: 2025-12-13T00:49:39Z

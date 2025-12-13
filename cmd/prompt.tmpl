@@ -27,10 +27,10 @@ If you identify something that should be changed or fixed after completing the u
 
 ## Finding work
 
-Use GraphQL to query for actionable beans (not completed, not blocked):
+Use GraphQL to query for actionable beans (not completed, not draft, not blocked):
 
 ```bash
-beans query '{ beans(filter: { excludeStatus: ["completed", "scrapped"], isBlocked: false }) { id title status type priority } }'
+beans query '{ beans(filter: { excludeStatus: ["completed", "scrapped", "draft"], isBlocked: false }) { id title status type priority } }'
 ```
 
 Other useful queries:

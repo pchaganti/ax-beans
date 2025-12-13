@@ -1,6 +1,6 @@
 ---
 title: Add beans graph command for relationship visualization
-status: backlog
+status: draft
 type: feature
 priority: normal
 tags:

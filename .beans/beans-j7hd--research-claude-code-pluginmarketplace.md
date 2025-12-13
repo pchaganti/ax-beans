@@ -1,6 +1,6 @@
 ---
 title: Research Claude Code plugin/marketplace
-status: backlog
+status: draft
 type: task
 created_at: 2025-12-13T01:53:55Z
 updated_at: 2025-12-13T01:53:55Z

@@ -1,6 +1,6 @@
 ---
 title: Add --unblocked filter to find actionable beans
-status: backlog
+status: draft
 type: feature
 tags:
     - cli
