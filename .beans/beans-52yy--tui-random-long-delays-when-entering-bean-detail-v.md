@@ -1,10 +1,10 @@
 ---
 title: 'TUI: Random long delays when entering bean detail view'
-status: todo
+status: completed
 type: bug
 priority: normal
 created_at: 2025-12-13T01:27:14Z
-updated_at: 2025-12-13T01:27:34Z
+updated_at: 2025-12-13T01:47:46Z
 ---
 
 ## Description

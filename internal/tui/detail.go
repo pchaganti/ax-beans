@@ -28,7 +28,9 @@ var (
 func getGlamourRenderer() *glamour.TermRenderer {
 	glamourRendererOnce.Do(func() {
 		var err error
-		glamourRenderer, err = glamour.NewTermRenderer(glamour.WithAutoStyle())
+		// Use DarkStyle instead of WithAutoStyle() to avoid slow terminal detection
+		// that can cause multi-second delays in some terminals
+		glamourRenderer, err = glamour.NewTermRenderer(glamour.WithStylePath("dark"))
 		if err != nil {
 			glamourRenderer = nil
 		}
