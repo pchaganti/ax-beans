@@ -29,42 +29,17 @@ When the user asks what to work on next:
 # Check for in-progress beans first (finish what's started)
 beans list --json --full -s in-progress
 
-# Find actionable beans (not blocked, not completed/scrapped/draft)
+# Find beans ready to start (not blocked, excludes in-progress/completed/scrapped/draft)
 beans list --json --full --ready
 ```
 </EXTREMELY_IMPORTANT>
-
-## GraphQL Queries
-
-The `beans query` command allows advanced querying using GraphQL.
-
-- Fetch exactly the fields you need, across a potentially large set of beans
-- Directly read all fields (including `body`) and relationships
-- Traverse relationships in a single query
-- Execute mutations to create and update beans
-- `beans query --help` for syntax and usage details
-- `beans query --schema` to view the full GraphQL schema
-
-```bash
-# Get all actionable beans with their details
-beans query --json '{ beans(filter: { excludeStatus: ["completed", "scrapped"], isBlocked: false }) { id title status type body } }'
-
-# Get a single bean with its relationships
-beans query --json '{ bean(id: "bean-abc") { title body parent { title } children { id title status } } }'
-
-# Find high-priority bugs
-beans query --json '{ beans(filter: { type: ["bug"], priority: ["critical", "high"] }) { id title } }'
-
-# Search with text
-beans query --json '{ beans(filter: { search: "authentication" }) { id title body } }'
-```
 
 ## CLI Commands
 
 ```bash
 # List beans
 beans list --json                      # All beans
-beans list --json --ready              # Actionable beans (not blocked, excludes completed/scrapped/draft)
+beans list --json --ready              # Beans ready to start (not blocked, excludes in-progress/completed/scrapped/draft)
 beans list --json -t bug -s todo       # Filter by type and status
 beans list --json -S "authentication"  # Full-text search
 beans list --help                      # Full options
@@ -113,3 +88,28 @@ Beans can have an optional priority. Use `-p` when creating or `--priority` when
 {{- end}}
 
 Beans without a priority are treated as `normal` priority for sorting purposes.
+
+## GraphQL Queries
+
+The `beans query` command allows advanced querying using GraphQL.
+
+- Fetch exactly the fields you need, across a potentially large set of beans
+- Directly read all fields (including `body`) and relationships
+- Traverse relationships in a single query
+- Execute mutations to create and update beans
+- `beans query --help` for syntax and usage details
+- `beans query --schema` to view the full GraphQL schema
+
+```bash
+# Get all actionable beans with their details
+beans query --json '{ beans(filter: { excludeStatus: ["completed", "scrapped"], isBlocked: false }) { id title status type body } }'
+
+# Get a single bean with its relationships
+beans query --json '{ bean(id: "bean-abc") { title body parent { title } children { id title status } } }'
+
+# Find high-priority bugs
+beans query --json '{ beans(filter: { type: ["bug"], priority: ["critical", "high"] }) { id title } }'
+
+# Search with text
+beans query --json '{ beans(filter: { search: "authentication" }) { id title body } }'
+```
