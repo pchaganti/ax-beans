@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "setup": "mise install",
+    "setup": "mise trust && mise install",
     "run": "mise beans tui"
   }
 }
