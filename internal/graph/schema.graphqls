@@ -12,6 +12,53 @@ type Query {
   List beans with optional filtering
   """
   beans(filter: BeanFilter): [Bean!]!
+
+  """
+  List active git worktrees created by beans
+  """
+  worktrees: [Worktree!]!
+}
+
+type Subscription {
+  """
+  Subscribe to bean change events (created, updated, deleted).
+
+  When includeInitial is true, all existing beans are emitted first as CREATED
+  events with isInitial=true, followed by real-time changes with isInitial=false.
+  This eliminates race conditions between loading and subscribing.
+  """
+  beanChanged(includeInitial: Boolean = false): BeanChangeEvent!
+
+  """
+  Subscribe to worktree changes. Emits the full list of active worktrees
+  whenever a worktree is created or removed.
+  """
+  worktreesChanged: [Worktree!]!
+}
+
+"""
+Represents a change to a bean
+"""
+type BeanChangeEvent {
+  "Type of change that occurred"
+  type: ChangeType!
+  "The bean that changed (null for DELETED events)"
+  bean: Bean
+  "ID of the bean that changed (always present)"
+  beanId: ID!
+}
+
+"""
+Type of change that occurred to a bean
+"""
+enum ChangeType {
+  "Bean existed when subscription started (emitted when includeInitial=true)"
+  INITIAL
+  "Signals that all initial beans have been sent (emitted after INITIAL events when includeInitial=true)"
+  INITIAL_SYNC_COMPLETE
+  CREATED
+  UPDATED
+  DELETED
 }
 
 type Mutation {
@@ -54,6 +101,16 @@ type Mutation {
   Remove a bean from the blocked-by list
   """
   removeBlockedBy(id: ID!, targetId: ID!, ifMatch: String): Bean!
+
+  """
+  Create a git worktree for a bean. Sets bean status to in-progress.
+  """
+  createWorktree(beanId: ID!): Worktree!
+
+  """
+  Remove a git worktree for a bean.
+  """
+  removeWorktree(beanId: ID!): Boolean!
 }
 
 """
@@ -116,6 +173,8 @@ input UpdateBeanInput {
   "Remove beans from blocked-by list"
   removeBlockedBy: [String!]
   
+  "Fractional index for manual ordering (used by board drag-and-drop)"
+  order: String
   "ETag for optimistic concurrency control (optional)"
   ifMatch: String
 }
@@ -174,6 +233,8 @@ type Bean {
   updatedAt: Time!
   "Markdown body content"
   body: String!
+  "Fractional index for manual ordering within status groups"
+  order: String!
   "Content hash for optimistic concurrency control"
   etag: String!
 
@@ -252,4 +313,18 @@ input BeanFilter {
   noBlocking: Boolean
   "Exclude beans that have explicit blocked-by entries"
   noBlockedBy: Boolean
+}
+
+"""
+A git worktree associated with a bean
+"""
+type Worktree {
+  "The bean ID this worktree is for"
+  beanId: ID!
+  "The associated bean"
+  bean: Bean
+  "Git branch name"
+  branch: String!
+  "Filesystem path to the worktree"
+  path: String!
 }

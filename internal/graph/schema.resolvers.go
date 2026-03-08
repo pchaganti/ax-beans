@@ -41,7 +41,10 @@ func (r *beanResolver) BlockedBy(ctx context.Context, obj *bean.Bean, filter *mo
 			result = append(result, link.FromBean)
 		}
 	}
-	return ApplyFilter(result, filter, r.Core), nil
+	filtered := ApplyFilter(result, filter, r.Core)
+	cfg := r.Core.Config()
+	bean.SortByStatusPriorityAndType(filtered, cfg.StatusNames(), cfg.PriorityNames(), cfg.TypeNames())
+	return filtered, nil
 }
 
 // Blocking is the resolver for the blocking field.
@@ -53,7 +56,10 @@ func (r *beanResolver) Blocking(ctx context.Context, obj *bean.Bean, filter *mod
 			result = append(result, target)
 		}
 	}
-	return ApplyFilter(result, filter, r.Core), nil
+	filtered := ApplyFilter(result, filter, r.Core)
+	cfg := r.Core.Config()
+	bean.SortByStatusPriorityAndType(filtered, cfg.StatusNames(), cfg.PriorityNames(), cfg.TypeNames())
+	return filtered, nil
 }
 
 // Parent is the resolver for the parent field.
@@ -78,7 +84,10 @@ func (r *beanResolver) Children(ctx context.Context, obj *bean.Bean, filter *mod
 			result = append(result, link.FromBean)
 		}
 	}
-	return ApplyFilter(result, filter, r.Core), nil
+	filtered := ApplyFilter(result, filter, r.Core)
+	cfg := r.Core.Config()
+	bean.SortByStatusPriorityAndType(filtered, cfg.StatusNames(), cfg.PriorityNames(), cfg.TypeNames())
+	return filtered, nil
 }
 
 // CreateBean is the resolver for the createBean field.
@@ -199,6 +208,9 @@ func (r *mutationResolver) UpdateBean(ctx context.Context, id string, input mode
 	}
 	if input.Priority != nil {
 		b.Priority = *input.Priority
+	}
+	if input.Order != nil {
+		b.Order = *input.Order
 	}
 	if input.Body != nil {
 		b.Body = *input.Body
@@ -454,6 +466,55 @@ func (r *mutationResolver) RemoveBlockedBy(ctx context.Context, id string, targe
 	return b, nil
 }
 
+// CreateWorktree is the resolver for the createWorktree field.
+func (r *mutationResolver) CreateWorktree(ctx context.Context, beanID string) (*model.Worktree, error) {
+	if r.WorktreeMgr == nil {
+		return nil, fmt.Errorf("worktree support not available")
+	}
+
+	// Normalize the bean ID
+	normalizedID, _ := r.Core.NormalizeID(beanID)
+
+	// Verify the bean exists
+	b, err := r.Core.Get(normalizedID)
+	if err != nil {
+		return nil, fmt.Errorf("bean not found: %s", beanID)
+	}
+
+	// Create the worktree
+	wt, err := r.WorktreeMgr.Create(normalizedID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set bean status to in-progress
+	if b.Status != "in-progress" {
+		b.Status = "in-progress"
+		if err := r.Core.Update(b, nil); err != nil {
+			return nil, fmt.Errorf("worktree created but failed to update bean status: %w", err)
+		}
+	}
+
+	return &model.Worktree{
+		BeanID: wt.BeanID,
+		Branch: wt.Branch,
+		Path:   wt.Path,
+	}, nil
+}
+
+// RemoveWorktree is the resolver for the removeWorktree field.
+func (r *mutationResolver) RemoveWorktree(ctx context.Context, beanID string) (bool, error) {
+	if r.WorktreeMgr == nil {
+		return false, fmt.Errorf("worktree support not available")
+	}
+
+	normalizedID, _ := r.Core.NormalizeID(beanID)
+	if err := r.WorktreeMgr.Remove(normalizedID); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Bean is the resolver for the bean field.
 func (r *queryResolver) Bean(ctx context.Context, id string) (*bean.Bean, error) {
 	b, err := r.Core.Get(id)
@@ -478,7 +539,186 @@ func (r *queryResolver) Beans(ctx context.Context, filter *model.BeanFilter) ([]
 		beans = r.Core.All()
 	}
 
-	return ApplyFilter(beans, filter, r.Core), nil
+	result := ApplyFilter(beans, filter, r.Core)
+
+	// Sort using the same logic as CLI and TUI
+	cfg := r.Core.Config()
+	bean.SortByStatusPriorityAndType(result, cfg.StatusNames(), cfg.PriorityNames(), cfg.TypeNames())
+
+	return result, nil
+}
+
+// Worktrees is the resolver for the worktrees field.
+func (r *queryResolver) Worktrees(ctx context.Context) ([]*model.Worktree, error) {
+	if r.WorktreeMgr == nil {
+		return []*model.Worktree{}, nil
+	}
+
+	wts, err := r.WorktreeMgr.List()
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]*model.Worktree, len(wts))
+	for i, wt := range wts {
+		result[i] = &model.Worktree{
+			BeanID: wt.BeanID,
+			Branch: wt.Branch,
+			Path:   wt.Path,
+		}
+	}
+	return result, nil
+}
+
+// BeanChanged is the resolver for the beanChanged field.
+func (r *subscriptionResolver) BeanChanged(ctx context.Context, includeInitial *bool) (<-chan *model.BeanChangeEvent, error) {
+	// Subscribe to bean events from beancore
+	eventCh, unsubscribe := r.Core.Subscribe()
+
+	// Create output channel for GraphQL
+	out := make(chan *model.BeanChangeEvent)
+
+	// Start goroutine to forward events
+	go func() {
+		defer unsubscribe()
+		defer close(out)
+
+		// If includeInitial is true, emit all current beans first (sorted consistently with CLI)
+		if includeInitial != nil && *includeInitial {
+			beans := r.Core.All()
+			cfg := r.Core.Config()
+			bean.SortByStatusPriorityAndType(beans, cfg.StatusNames(), cfg.PriorityNames(), cfg.TypeNames())
+
+			for _, b := range beans {
+				select {
+				case out <- &model.BeanChangeEvent{
+					Type:   model.ChangeTypeInitial,
+					BeanID: b.ID,
+					Bean:   b,
+				}:
+					// Sent successfully
+				case <-ctx.Done():
+					return
+				}
+			}
+
+			// Signal that initial sync is complete
+			select {
+			case out <- &model.BeanChangeEvent{
+				Type:   model.ChangeTypeInitialSyncComplete,
+				BeanID: "",
+			}:
+				// Sent successfully
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		for {
+			select {
+			case <-ctx.Done():
+				// Client disconnected
+				return
+			case events, ok := <-eventCh:
+				if !ok {
+					// Channel closed (watcher stopped)
+					return
+				}
+
+				// Forward each event to the GraphQL subscription
+				for _, event := range events {
+					gqlEvent := &model.BeanChangeEvent{
+						BeanID: event.BeanID,
+						Bean:   event.Bean,
+					}
+
+					// Convert event type
+					switch event.Type {
+					case beancore.EventCreated:
+						gqlEvent.Type = model.ChangeTypeCreated
+					case beancore.EventUpdated:
+						gqlEvent.Type = model.ChangeTypeUpdated
+					case beancore.EventDeleted:
+						gqlEvent.Type = model.ChangeTypeDeleted
+					}
+
+					select {
+					case out <- gqlEvent:
+						// Sent successfully
+					case <-ctx.Done():
+						return
+					}
+				}
+			}
+		}
+	}()
+
+	return out, nil
+}
+
+// WorktreesChanged is the resolver for the worktreesChanged field.
+func (r *subscriptionResolver) WorktreesChanged(ctx context.Context) (<-chan []*model.Worktree, error) {
+	if r.WorktreeMgr == nil {
+		out := make(chan []*model.Worktree)
+		close(out)
+		return out, nil
+	}
+
+	ch := r.WorktreeMgr.Subscribe()
+	out := make(chan []*model.Worktree)
+
+	go func() {
+		defer r.WorktreeMgr.Unsubscribe(ch)
+		defer close(out)
+
+		// Emit the current list immediately
+		if wts, err := r.WorktreeMgr.List(); err == nil {
+			result := make([]*model.Worktree, len(wts))
+			for i, wt := range wts {
+				result[i] = &model.Worktree{
+					BeanID: wt.BeanID,
+					Branch: wt.Branch,
+					Path:   wt.Path,
+				}
+			}
+			select {
+			case out <- result:
+			case <-ctx.Done():
+				return
+			}
+		}
+
+		// Then emit on each change
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case _, ok := <-ch:
+				if !ok {
+					return
+				}
+				wts, err := r.WorktreeMgr.List()
+				if err != nil {
+					continue
+				}
+				result := make([]*model.Worktree, len(wts))
+				for i, wt := range wts {
+					result[i] = &model.Worktree{
+						BeanID: wt.BeanID,
+						Branch: wt.Branch,
+						Path:   wt.Path,
+					}
+				}
+				select {
+				case out <- result:
+				case <-ctx.Done():
+					return
+				}
+			}
+		}
+	}()
+
+	return out, nil
 }
 
 // Bean returns BeanResolver implementation.
@@ -490,6 +730,10 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+// Subscription returns SubscriptionResolver implementation.
+func (r *Resolver) Subscription() SubscriptionResolver { return &subscriptionResolver{r} }
+
 type beanResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type subscriptionResolver struct{ *Resolver }
