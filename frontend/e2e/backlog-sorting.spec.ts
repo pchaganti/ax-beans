@@ -81,6 +81,113 @@ test.describe('Backlog sorting', () => {
 		}).toPass({ timeout: 5_000 });
 	});
 
+	test('dragging a bean reorders it within the backlog', async ({ beans, backlogPage }) => {
+		// Create beans with same status/priority/type so they sort by title
+		beans.create('Alpha', { status: 'todo', type: 'task' });
+		beans.create('Bravo', { status: 'todo', type: 'task' });
+		beans.create('Charlie', { status: 'todo', type: 'task' });
+
+		await backlogPage.goto(3);
+
+		// Initial order: Alpha, Bravo, Charlie
+		let titles = await backlogPage.getBeanTitles();
+		expect(titles).toEqual(['Alpha', 'Bravo', 'Charlie']);
+
+		// Drag Charlie above Alpha
+		await backlogPage.dragBean('Charlie', 'Alpha', 'above');
+
+		// New order: Charlie, Alpha, Bravo
+		await expect(async () => {
+			titles = await backlogPage.getBeanTitles();
+			expect(titles).toEqual(['Charlie', 'Alpha', 'Bravo']);
+		}).toPass({ timeout: 5_000 });
+	});
+
+	test('dragging a bean onto another reparents it and persists', async ({
+		beans,
+		backlogPage,
+		page
+	}) => {
+		beans.create('Parent Bean', { status: 'todo', type: 'feature' });
+		beans.create('Child Bean', { status: 'todo', type: 'task' });
+
+		await backlogPage.goto(2);
+
+		// Both are top-level initially
+		let titles = await backlogPage.getBeanTitles();
+		expect(titles).toContain('Parent Bean');
+		expect(titles).toContain('Child Bean');
+
+		// Drag Child Bean onto Parent Bean to reparent it
+		await backlogPage.dragBean('Child Bean', 'Parent Bean', 'onto');
+
+		// Child Bean should now be nested under Parent Bean
+		await expect(async () => {
+			const parentItem = backlogPage.beanByTitle('Parent Bean');
+			const nestedChild = parentItem.locator('.bean-item', { hasText: 'Child Bean' });
+			await expect(nestedChild).toBeVisible();
+		}).toPass({ timeout: 5_000 });
+
+		// Reload the page to verify persistence
+		await page.reload();
+		await backlogPage.waitForBean('Parent Bean');
+
+		// After reload, Child Bean should still be nested under Parent Bean
+		await expect(async () => {
+			const parentItem = backlogPage.beanByTitle('Parent Bean');
+			const nestedChild = parentItem.locator('.bean-item', { hasText: 'Child Bean' });
+			await expect(nestedChild).toBeVisible();
+		}).toPass({ timeout: 5_000 });
+	});
+
+	test('dragging a bean into a specific position within another parent works', async ({
+		beans,
+		backlogPage,
+		page
+	}) => {
+		// Create a feature with 3 child tasks
+		const parentId = beans.create('Parent Feature', { status: 'todo', type: 'feature' });
+		const childA = beans.create('Alpha Child', { status: 'todo', type: 'task' });
+		const childB = beans.create('Bravo Child', { status: 'todo', type: 'task' });
+		const childC = beans.create('Charlie Child', { status: 'todo', type: 'task' });
+
+		// Set parent relationships via CLI
+		beans.run(['update', childA, '--parent', parentId]);
+		beans.run(['update', childB, '--parent', parentId]);
+		beans.run(['update', childC, '--parent', parentId]);
+
+		// Create a top-level task to drag in
+		beans.create('Interloper', { status: 'todo', type: 'task' });
+
+		await backlogPage.goto(5); // Parent Feature + 3 children + Interloper
+
+		// Drag Interloper above Bravo Child (between Alpha and Bravo)
+		await backlogPage.dragBean('Interloper', 'Bravo Child', 'above');
+
+		// Verify: Interloper should be between Alpha Child and Bravo Child
+		await expect(async () => {
+			const parentItem = backlogPage.beanByTitle('Parent Feature');
+			const childTitles = await parentItem
+				.locator('.bean-item button > div > span.text-sm')
+				.allTextContents();
+			const trimmed = childTitles.map((t) => t.trim());
+			expect(trimmed).toEqual(['Alpha Child', 'Interloper', 'Bravo Child', 'Charlie Child']);
+		}).toPass({ timeout: 5_000 });
+
+		// Verify persistence
+		await page.reload();
+		await backlogPage.waitForBean('Parent Feature');
+
+		await expect(async () => {
+			const parentItem = backlogPage.beanByTitle('Parent Feature');
+			const childTitles = await parentItem
+				.locator('.bean-item button > div > span.text-sm')
+				.allTextContents();
+			const trimmed = childTitles.map((t) => t.trim());
+			expect(trimmed).toEqual(['Alpha Child', 'Interloper', 'Bravo Child', 'Charlie Child']);
+		}).toPass({ timeout: 5_000 });
+	});
+
 	test('deleted bean disappears from list', async ({ beans, backlogPage }) => {
 		const id1 = beans.create('Bean To Delete', { status: 'todo', type: 'task' });
 		beans.create('Bean To Keep', { status: 'todo', type: 'task' });

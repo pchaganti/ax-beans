@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { beansStore } from '$lib/beans.svelte';
 	import { ui } from '$lib/uiState.svelte';
+	import { backlogDrag } from '$lib/backlogDrag.svelte';
 	import BeanItem from '$lib/components/BeanItem.svelte';
 	import BoardView from '$lib/components/BoardView.svelte';
 	import BeanPane from '$lib/components/BeanPane.svelte';
@@ -111,10 +112,19 @@
 						<!-- svelte-ignore a11y_click_events_have_key_events -->
 						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div class="flex-1 overflow-auto bg-surface" onclick={handlePlanningClick}>
-							<div class="space-y-1 p-3" onclick={handlePlanningClick}>
-								{#each topLevelBeans as bean (bean.id)}
+							<div
+								class="p-3"
+								onclick={handlePlanningClick}
+								ondragover={(e) => backlogDrag.hoverList(e, null, topLevelBeans.length)}
+								ondragleave={(e) => backlogDrag.leaveList(e, e.currentTarget, null)}
+								ondrop={(e) => backlogDrag.drop(e, null, topLevelBeans)}
+								role="list"
+							>
+								{#each topLevelBeans as bean, i (bean.id)}
 									<BeanItem
 										{bean}
+										parentId={null}
+										index={i}
 										selectedId={ui.currentBean?.id}
 										onSelect={(b) => ui.selectBean(b)}
 									/>
@@ -123,6 +133,16 @@
 										<p class="text-text-muted text-center py-8 text-sm">No beans yet</p>
 									{/if}
 								{/each}
+
+								<!-- Drop indicator at end of top-level list -->
+								<div
+									class={[
+										'mx-1 h-0.5 rounded-full transition-colors',
+										backlogDrag.showEndIndicator(null, topLevelBeans.length)
+											? 'bg-accent'
+											: 'bg-transparent'
+									]}
+								></div>
 							</div>
 						</div>
 					{:else}

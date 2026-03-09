@@ -1,10 +1,8 @@
 <script lang="ts">
 	import type { Bean } from '$lib/beans.svelte';
 	import { beansStore, sortBeans } from '$lib/beans.svelte';
-	import { orderBetween } from '$lib/fractional';
+	import { applyDrop } from '$lib/dragOrder';
 	import { typeBorders } from '$lib/styles';
-	import { gql } from 'urql';
-	import { client } from '$lib/graphqlClient';
 	import BeanCard from './BeanCard.svelte';
 
 	interface Props {
@@ -38,16 +36,6 @@
 	let draggedBeanId = $state<string | null>(null);
 	let dropTargetStatus = $state<string | null>(null);
 	let dropIndex = $state<number | null>(null);
-
-	const UPDATE_BEAN = gql`
-		mutation UpdateBean($id: ID!, $input: UpdateBeanInput!) {
-			updateBean(id: $id, input: $input) {
-				id
-				status
-				order
-			}
-		}
-	`;
 
 	function onDragStart(e: DragEvent, bean: Bean) {
 		draggedBeanId = bean.id;
@@ -90,61 +78,6 @@
 		}
 	}
 
-	/**
-	 * Ensure all beans in the list have order keys.
-	 * Assigns evenly-spaced keys to any beans missing them,
-	 * preserving the relative positions of beans that already have keys.
-	 * Returns the list with orders filled in. Updates the store optimistically.
-	 */
-	function ensureOrdered(beans: Bean[]): Bean[] {
-		const needsOrder = beans.filter((b) => !b.order);
-		if (needsOrder.length === 0) return beans;
-
-		// Assign orders to all beans based on their current visual position
-		const result = [...beans];
-		let key = '';
-		for (let i = 0; i < result.length; i++) {
-			const nextKey = i < result.length - 1 && result[i + 1].order ? result[i + 1].order : '';
-			if (!result[i].order) {
-				const newOrder = orderBetween(key, nextKey);
-				result[i] = { ...result[i], order: newOrder };
-				beansStore.optimisticUpdate(result[i].id, { order: newOrder });
-				client.mutation(UPDATE_BEAN, { id: result[i].id, input: { order: newOrder } }).toPromise();
-			}
-			key = result[i].order;
-		}
-		return result;
-	}
-
-	function computeOrder(beans: Bean[], targetIndex: number, draggedId: string): string {
-		// Find where the dragged bean is in the original list
-		const draggedIndex = beans.findIndex((b) => b.id === draggedId);
-
-		// Filter out the dragged bean from the list
-		const filtered = beans.filter((b) => b.id !== draggedId);
-
-		if (filtered.length === 0) {
-			return orderBetween('', '');
-		}
-
-		// Adjust target index: if dragging downward in the same column,
-		// the visual index is 1 too high because the dragged bean is still in the list
-		let idx = targetIndex;
-		if (draggedIndex >= 0 && targetIndex > draggedIndex) {
-			idx--;
-		}
-		idx = Math.min(idx, filtered.length);
-
-		if (idx === 0) {
-			return orderBetween('', filtered[0].order);
-		}
-		if (idx >= filtered.length) {
-			return orderBetween(filtered[filtered.length - 1].order, '');
-		}
-
-		return orderBetween(filtered[idx - 1].order, filtered[idx].order);
-	}
-
 	function onDrop(e: DragEvent, targetStatus: string, beans: Bean[]) {
 		e.preventDefault();
 		const targetIdx = dropIndex;
@@ -156,38 +89,7 @@
 
 		if (!beanId) return;
 
-		const bean = beansStore.get(beanId);
-		if (!bean) return;
-
-		// Ensure all beans in the target column have order keys first
-		const orderedBeans = ensureOrdered(beans);
-
-		const sameColumn = bean.status === targetStatus;
-		const newOrder = computeOrder(orderedBeans, targetIdx ?? orderedBeans.length, beanId);
-
-		// Skip if same column and order hasn't changed
-		if (sameColumn && bean.order === newOrder) return;
-
-		// Optimistic update — move the bean immediately in the local store
-		const optimistic: Partial<Bean> = { order: newOrder };
-		if (!sameColumn) {
-			optimistic.status = targetStatus;
-		}
-		beansStore.optimisticUpdate(beanId, optimistic);
-
-		// Fire mutation in background
-		const input: Record<string, string> = { order: newOrder };
-		if (!sameColumn) {
-			input.status = targetStatus;
-		}
-		client
-			.mutation(UPDATE_BEAN, { id: beanId, input })
-			.toPromise()
-			.then((result) => {
-				if (result.error) {
-					console.error('Failed to update bean:', result.error);
-				}
-			});
+		applyDrop(beans, beanId, targetIdx ?? beans.length, { newStatus: targetStatus });
 	}
 </script>
 

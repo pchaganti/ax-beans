@@ -61,4 +61,44 @@ export class BacklogPage {
 	async count(): Promise<number> {
 		return this.beanItems.count();
 	}
+
+	/** Get the .bean-item for a specific bean by title (uses data-bean-id for precision). */
+	beanByTitle(title: string): Locator {
+		return this.beanItems.filter({ hasText: title }).first();
+	}
+
+	/**
+	 * Get the draggable card element for a bean, identified by title.
+	 * Each [draggable] div contains only its own card's content (not descendants),
+	 * so filtering by text gives us the exact bean's drag handle.
+	 */
+	private draggableByTitle(title: string): Locator {
+		return this.page.locator(`[draggable="true"]:has(button span.text-sm:text-is("${title}"))`);
+	}
+
+	/**
+	 * Drag a bean to reorder it above/below another bean, or onto it to reparent.
+	 *
+	 * The drop zones are: top 25% = above, middle 50% = reparent, bottom 25% = below.
+	 * We target 10%/90% for reorder and 50% for reparent to avoid zone boundaries.
+	 */
+	async dragBean(
+		sourceTitle: string,
+		targetTitle: string,
+		position: 'above' | 'below' | 'onto' = 'above'
+	) {
+		const source = this.draggableByTitle(sourceTitle);
+		const target = this.draggableByTitle(targetTitle);
+
+		const targetBox = await target.boundingBox();
+		if (!targetBox) throw new Error(`Target bean "${targetTitle}" not visible`);
+
+		// Compute Y offset within the target card
+		const yFraction = position === 'above' ? 0.1 : position === 'below' ? 0.9 : 0.5;
+		const targetY = targetBox.height * yFraction;
+
+		await source.dragTo(target, {
+			targetPosition: { x: targetBox.width / 2, y: targetY }
+		});
+	}
 }
