@@ -191,21 +191,23 @@
 	}
 </script>
 
-<div class="flex h-full gap-4 overflow-x-auto p-4">
+<div class="flex h-full overflow-x-auto p-4">
 	{#each columns as col}
 		{@const beans = beansForStatus(col.status)}
-		<div class="flex w-[300px] min-w-[260px] shrink-0 flex-col" data-status={col.status}>
+		<div class="flex w-75 min-w-65 shrink-0 flex-col" data-status={col.status}>
 			<!-- Column header -->
 			<div class="mb-3 flex items-center gap-2 px-1">
-				<span class={["rounded-full px-2 py-0.5 text-[11px] font-medium", col.color]}>{col.label}</span>
+				<span class={['rounded-full px-2 py-0.5 text-[11px] font-medium', col.color]}
+					>{col.label}</span
+				>
 				<span class="text-xs text-text-faint">{beans.length}</span>
 			</div>
 
 			<!-- Cards (drop zone) -->
 			<div
 				class={[
-					"flex-1 overflow-y-auto rounded-xl p-2 transition-colors",
-					dropTargetStatus === col.status && draggedBeanId && "bg-accent/10 ring-2 ring-accent/30"
+					'flex-1 overflow-y-auto rounded-xl p-2 transition-colors',
+					dropTargetStatus === col.status && draggedBeanId && 'bg-accent/10 ring-2 ring-accent/30'
 				]}
 				role="list"
 				ondragover={(e) => onColumnDragOver(e, col.status, beans.length)}
@@ -216,19 +218,22 @@
 					<!-- Drop indicator (always present, transparent unless active) -->
 					<div
 						class={[
-							"mx-1 my-1 h-0.5 rounded-full transition-colors",
-							dropTargetStatus === col.status && draggedBeanId && draggedBeanId !== bean.id && dropIndex === index
-								? "bg-accent"
-								: "bg-transparent"
+							'mx-1 my-1 h-0.5 rounded-full transition-colors',
+							dropTargetStatus === col.status &&
+							draggedBeanId &&
+							draggedBeanId !== bean.id &&
+							dropIndex === index
+								? 'bg-accent'
+								: 'bg-transparent'
 						]}
 					></div>
 
 					<div
 						class={[
-							"overflow-hidden rounded border border-l-5 border-border bg-surface shadow transition-all",
-							typeBorders[bean.type] ?? "border-l-type-task-border",
-							draggedBeanId === bean.id ? "opacity-40" : "hover:shadow-md",
-							selectedId === bean.id && "bg-accent/5 ring-1 ring-accent"
+							'overflow-hidden rounded border border-l-5 border-border bg-surface shadow transition-all',
+							typeBorders[bean.type] ?? 'border-l-type-task-border',
+							draggedBeanId === bean.id ? 'opacity-40' : 'hover:shadow-md',
+							selectedId === bean.id && 'bg-accent/5 ring-1 ring-accent'
 						]}
 						draggable="true"
 						ondragstart={(e) => onDragStart(e, bean)}
@@ -245,10 +250,10 @@
 				<!-- Drop indicator at end (always present) -->
 				<div
 					class={[
-						"mx-1 my-1 h-0.5 rounded-full transition-colors",
+						'mx-1 my-1 h-0.5 rounded-full transition-colors',
 						dropTargetStatus === col.status && draggedBeanId && dropIndex === beans.length
-							? "bg-accent"
-							: "bg-transparent"
+							? 'bg-accent'
+							: 'bg-transparent'
 					]}
 				></div>
 			</div>
