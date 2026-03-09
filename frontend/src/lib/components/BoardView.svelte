@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { Bean } from '$lib/beans.svelte';
 	import { beansStore, sortBeans } from '$lib/beans.svelte';
+	import { worktreeStore } from '$lib/worktrees.svelte';
 	import { orderBetween } from '$lib/fractional';
 	import { gql } from 'urql';
 	import { client } from '$lib/graphqlClient';
@@ -231,8 +232,8 @@
 					></div>
 
 					<div
-						class="rounded-lg border border-border bg-surface shadow-sm border-l-3 transition-all cursor-pointer
-							{typeBorders[bean.type] ?? 'border-l-surface-dim'}
+						class="rounded-lg border border-border bg-surface shadow-sm border-l-3 transition-all
+							{worktreeStore.hasWorktree(bean.id) ? 'border-l-success' : typeBorders[bean.type] ?? 'border-l-surface-dim'}
 							{draggedBeanId === bean.id ? 'opacity-40' : 'hover:shadow-md'}
 							{selectedId === bean.id ? 'ring-1 ring-accent bg-accent/5' : ''}"
 						draggable="true"
@@ -241,7 +242,7 @@
 						ondragover={(e) => onCardDragOver(e, col.status, index)}
 						role="listitem"
 					>
-						<button class="p-3 text-left cursor-pointer w-full" onclick={() => onSelect?.(bean)}>
+						<button class="p-3 text-left w-full" onclick={() => onSelect?.(bean)}>
 							<div class="flex items-start gap-2 min-w-0">
 								<span class="text-sm text-text flex-1 leading-snug">{bean.title}</span>
 								{#if bean.priority && bean.priority !== 'normal' && priorityIndicators[bean.priority]}

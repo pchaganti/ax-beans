@@ -31,41 +31,12 @@ class UIState {
 		window.history.replaceState(window.history.state, '', url);
 	}
 
-	/** Read initial selection from URL on page load */
-	loadFromUrl() {
-		const params = new URLSearchParams(window.location.search);
-		const beanId = params.get('bean');
-		if (beanId) {
-			this.selectedBeanId = beanId;
-		}
-	}
+	// Planning view toggle (persisted to localStorage, initialized from layout load)
+	planningView = $state<'backlog' | 'board'>('backlog');
 
-	// Draggable pane
-	paneWidth = $state(350);
-	isDragging = $state(false);
-
-	startDrag(e: MouseEvent) {
-		this.isDragging = true;
-		e.preventDefault();
-	}
-
-	onDrag(e: MouseEvent) {
-		if (!this.isDragging) return;
-		this.paneWidth = Math.max(200, Math.min(600, e.clientX));
-	}
-
-	stopDrag() {
-		if (this.isDragging) {
-			this.isDragging = false;
-			localStorage.setItem('beans-pane-width', this.paneWidth.toString());
-		}
-	}
-
-	loadPaneWidth() {
-		const saved = localStorage.getItem('beans-pane-width');
-		if (saved) {
-			this.paneWidth = Math.max(200, Math.min(600, parseInt(saved, 10)));
-		}
+	setPlanningView(view: 'backlog' | 'board') {
+		this.planningView = view;
+		localStorage.setItem('beans-planning-view', view);
 	}
 
 	// Form modal
