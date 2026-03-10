@@ -7,9 +7,8 @@ priority: normal
 tags:
     - idea
 created_at: 2025-12-08T17:11:36Z
-updated_at: 2026-03-07T23:18:33Z
+updated_at: 2026-03-10T08:10:33Z
 order: "Y"
-parent: beans-f11p
 ---
 
 Add a `beans release` command that uses Beans for release management and changelog updating.
