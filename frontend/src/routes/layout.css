@@ -254,7 +254,7 @@ button:disabled {
 		--th-text: var(--color-zinc-300);
 		--th-text-muted: var(--color-zinc-400);
 		--th-text-faint: var(--color-zinc-500);
-		--th-accent: var(--color-zinc-300);
+		--th-accent: var(--color-sky-400);
 		--th-accent-text: var(--color-zinc-900);
 		--th-danger: var(--color-red-500);
 		--th-warning: var(--color-amber-500);
