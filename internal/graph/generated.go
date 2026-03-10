@@ -70,6 +70,7 @@ type ComplexityRoot struct {
 		PlanMode           func(childComplexity int) int
 		Status             func(childComplexity int) int
 		SystemStatus       func(childComplexity int) int
+		WorkDir            func(childComplexity int) int
 		YoloMode           func(childComplexity int) int
 	}
 
@@ -289,6 +290,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AgentSession.SystemStatus(childComplexity), true
+	case "AgentSession.workDir":
+		if e.complexity.AgentSession.WorkDir == nil {
+			break
+		}
+
+		return e.complexity.AgentSession.WorkDir(childComplexity), true
 	case "AgentSession.yoloMode":
 		if e.complexity.AgentSession.YoloMode == nil {
 			break
@@ -1728,6 +1735,35 @@ func (ec *executionContext) fieldContext_AgentSession_pendingInteraction(_ conte
 				return ec.fieldContext_PendingInteraction_toolInput(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type PendingInteraction", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentSession_workDir(ctx context.Context, field graphql.CollectedField, obj *model.AgentSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AgentSession_workDir,
+		func(ctx context.Context) (any, error) {
+			return obj.WorkDir, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AgentSession_workDir(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -4125,6 +4161,8 @@ func (ec *executionContext) fieldContext_Query_agentSession(ctx context.Context,
 				return ec.fieldContext_AgentSession_systemStatus(ctx, field)
 			case "pendingInteraction":
 				return ec.fieldContext_AgentSession_pendingInteraction(ctx, field)
+			case "workDir":
+				return ec.fieldContext_AgentSession_workDir(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AgentSession", field.Name)
 		},
@@ -4382,6 +4420,8 @@ func (ec *executionContext) fieldContext_Subscription_agentSessionChanged(ctx co
 				return ec.fieldContext_AgentSession_systemStatus(ctx, field)
 			case "pendingInteraction":
 				return ec.fieldContext_AgentSession_pendingInteraction(ctx, field)
+			case "workDir":
+				return ec.fieldContext_AgentSession_workDir(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AgentSession", field.Name)
 		},
@@ -6650,6 +6690,8 @@ func (ec *executionContext) _AgentSession(ctx context.Context, sel ast.Selection
 			out.Values[i] = ec._AgentSession_systemStatus(ctx, field, obj)
 		case "pendingInteraction":
 			out.Values[i] = ec._AgentSession_pendingInteraction(ctx, field, obj)
+		case "workDir":
+			out.Values[i] = ec._AgentSession_workDir(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

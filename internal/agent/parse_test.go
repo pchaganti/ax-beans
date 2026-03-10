@@ -149,9 +149,10 @@ func TestParseStreamLine(t *testing.T) {
 
 func TestExtractToolSummary(t *testing.T) {
 	tests := []struct {
-		name  string
-		input string
-		want  string
+		name    string
+		input   string
+		workDir string
+		want    string
 	}{
 		{
 			name:  "agent with description",
@@ -162,6 +163,30 @@ func TestExtractToolSummary(t *testing.T) {
 			name:  "read with file_path",
 			input: `{"file_path":"/src/main.go"}`,
 			want:  "/src/main.go",
+		},
+		{
+			name:    "file_path with workDir stripped",
+			input:   `{"file_path":"/home/user/project/src/main.go"}`,
+			workDir: "/home/user/project",
+			want:    "src/main.go",
+		},
+		{
+			name:    "file_path outside workDir unchanged",
+			input:   `{"file_path":"/other/path/main.go"}`,
+			workDir: "/home/user/project",
+			want:    "/other/path/main.go",
+		},
+		{
+			name:    "empty workDir leaves path unchanged",
+			input:   `{"file_path":"/src/main.go"}`,
+			workDir: "",
+			want:    "/src/main.go",
+		},
+		{
+			name:    "non-file_path fields not stripped",
+			input:   `{"pattern":"/home/user/project/TODO"}`,
+			workDir: "/home/user/project",
+			want:    "/home/user/project/TODO",
 		},
 		{
 			name:  "bash with description",
@@ -197,7 +222,7 @@ func TestExtractToolSummary(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := extractToolSummary(tt.input)
+			got := extractToolSummary(tt.input, tt.workDir)
 			if got != tt.want {
 				t.Errorf("extractToolSummary() = %q, want %q", got, tt.want)
 			}

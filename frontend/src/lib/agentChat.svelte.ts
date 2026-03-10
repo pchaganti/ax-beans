@@ -26,6 +26,7 @@ export interface AgentSession {
   yoloMode: boolean;
   systemStatus: string | null;
   pendingInteraction: PendingInteraction | null;
+  workDir: string | null;
 }
 
 const AGENT_SESSION_SUBSCRIPTION = gql`
@@ -48,6 +49,7 @@ const AGENT_SESSION_SUBSCRIPTION = gql`
         toolName
         toolInput
       }
+      workDir
     }
   }
 `;

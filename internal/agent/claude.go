@@ -147,7 +147,7 @@ func (m *Manager) spawnAndRun(beanID string, session *Session) {
 	}
 
 	// Read stdout line by line
-	m.readOutput(beanID, stdout)
+	m.readOutput(beanID, stdout, session.WorkDir)
 
 	// Process exited — clean up.
 	// Only modify state if this proc is still the current one for this beanID.
@@ -174,7 +174,7 @@ func (m *Manager) spawnAndRun(beanID string, session *Session) {
 
 // readOutput reads Claude Code's stream-json output line by line,
 // updates the session state, and notifies subscribers.
-func (m *Manager) readOutput(beanID string, stdout io.Reader) {
+func (m *Manager) readOutput(beanID string, stdout io.Reader, workDir string) {
 	scanner := bufio.NewScanner(stdout)
 	// Increase buffer for long lines (1MB)
 	scanner.Buffer(make([]byte, 0, 1024*1024), 1024*1024)
@@ -314,7 +314,7 @@ func (m *Manager) readOutput(beanID string, stdout io.Reader) {
 			toolInputBuf.WriteString(ev.Text)
 			if toolMsgIdx >= 0 {
 				// Try parsing accumulated JSON (may be incomplete — that's fine)
-				summary := extractToolSummary(toolInputBuf.String())
+				summary := extractToolSummary(toolInputBuf.String(), workDir)
 				if summary != "" {
 					m.mu.Lock()
 					if s, ok := m.sessions[beanID]; ok && toolMsgIdx < len(s.Messages) {

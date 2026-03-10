@@ -42,7 +42,7 @@ func TestReadOutputMessageOrder(t *testing.T) {
 	}
 	m.sessions["bean-test"] = session
 
-	m.readOutput("bean-test", strings.NewReader(lines))
+	m.readOutput("bean-test", strings.NewReader(lines), "")
 
 	// Expected message order:
 	// [0] USER: "hello"          (pre-existing)
@@ -109,7 +109,7 @@ func TestReadOutputMultipleTools(t *testing.T) {
 	}
 	m.sessions["bean-multi"] = session
 
-	m.readOutput("bean-multi", strings.NewReader(lines))
+	m.readOutput("bean-multi", strings.NewReader(lines), "")
 
 	// Expected: USER, ASSISTANT(Step 1), TOOL(Bash), ASSISTANT(Step 2), TOOL(Read), ASSISTANT(Step 3)
 	msgs := session.Messages

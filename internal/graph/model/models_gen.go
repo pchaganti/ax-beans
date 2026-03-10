@@ -47,6 +47,8 @@ type AgentSession struct {
 	SystemStatus *string `json:"systemStatus,omitempty"`
 	// Pending blocking interaction awaiting user response
 	PendingInteraction *PendingInteraction `json:"pendingInteraction,omitempty"`
+	// Working directory / worktree path for this session
+	WorkDir *string `json:"workDir,omitempty"`
 }
 
 // Represents a change to a bean

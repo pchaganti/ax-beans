@@ -432,6 +432,8 @@ type AgentSession {
   systemStatus: String
   "Pending blocking interaction awaiting user response"
   pendingInteraction: PendingInteraction
+  "Working directory / worktree path for this session"
+  workDir: String
 }
 
 """

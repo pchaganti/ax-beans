@@ -92,6 +92,14 @@
     store.resolvePermission(beanId, false);
   }
 
+  function stripWorkDir(filePath: string): string {
+    const wd = store.session?.workDir;
+    if (wd && filePath.startsWith(wd + '/')) {
+      return filePath.slice(wd.length + 1);
+    }
+    return filePath;
+  }
+
   function formatToolInput(toolName: string | null, toolInput: string | null): string {
     if (!toolInput) return '';
     try {
@@ -101,13 +109,15 @@
           return input.command ?? '';
         case 'Write':
         case 'Read':
-          return input.file_path ?? '';
+          return input.file_path ? stripWorkDir(input.file_path) : '';
         case 'Edit':
           return input.file_path
-            ? `${input.file_path}\n${input.old_string ?? ''} → ${input.new_string ?? ''}`
+            ? `${stripWorkDir(input.file_path)}\n${input.old_string ?? ''} → ${input.new_string ?? ''}`
             : '';
         case 'Grep':
-          return input.pattern ? `/${input.pattern}/ ${input.path ?? ''}`.trim() : '';
+          return input.pattern
+            ? `/${input.pattern}/ ${input.path ? stripWorkDir(input.path) : ''}`.trim()
+            : '';
         case 'Glob':
           return input.pattern ?? '';
         case 'ToolSearch':
@@ -135,7 +145,7 @@
           ];
           for (const field of summaryFields) {
             if (input[field] && typeof input[field] === 'string') {
-              return input[field];
+              return field === 'file_path' ? stripWorkDir(input[field]) : input[field];
             }
           }
           return '';

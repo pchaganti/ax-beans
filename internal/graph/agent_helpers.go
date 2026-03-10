@@ -78,6 +78,11 @@ func agentSessionToModel(s *agent.Session) *model.AgentSession {
 		sysStatus = &s.SystemStatus
 	}
 
+	var workDir *string
+	if s.WorkDir != "" {
+		workDir = &s.WorkDir
+	}
+
 	return &model.AgentSession{
 		BeanID:             s.ID,
 		AgentType:          s.AgentType,
@@ -88,6 +93,7 @@ func agentSessionToModel(s *agent.Session) *model.AgentSession {
 		YoloMode:           s.YoloMode,
 		SystemStatus:       sysStatus,
 		PendingInteraction: pending,
+		WorkDir:            workDir,
 	}
 }
 

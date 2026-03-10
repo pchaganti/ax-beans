@@ -1,6 +1,9 @@
 package agent
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strings"
+)
 
 // streamEvent represents a single JSON line from Claude Code's stream-json output.
 // The format varies by event type — we use a permissive struct and inspect fields.
@@ -211,8 +214,10 @@ var toolInputSummaryFields = []string{
 }
 
 // extractToolSummary tries to extract a short summary from accumulated
-// tool input JSON. Returns empty string if nothing useful is found.
-func extractToolSummary(inputJSON string) string {
+// tool input JSON. If workDir is non-empty, it is stripped from file_path
+// values so the display shows relative paths. Returns empty string if
+// nothing useful is found.
+func extractToolSummary(inputJSON, workDir string) string {
 	var obj map[string]interface{}
 	if err := json.Unmarshal([]byte(inputJSON), &obj); err != nil {
 		return ""
@@ -220,6 +225,11 @@ func extractToolSummary(inputJSON string) string {
 	for _, field := range toolInputSummaryFields {
 		if v, ok := obj[field]; ok {
 			if s, ok := v.(string); ok && s != "" {
+				// Strip workDir prefix from file paths
+				if field == "file_path" && workDir != "" {
+					prefix := workDir + "/"
+					s = strings.TrimPrefix(s, prefix)
+				}
 				// Truncate long values
 				if len(s) > 80 {
 					s = s[:77] + "..."
