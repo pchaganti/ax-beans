@@ -88,9 +88,11 @@ export class BeansStore {
 	/** Subscription teardown function */
 	#unsubscribe: (() => void) | null = null;
 
-	/** All beans as a sorted array (derived) */
+	/** All non-archived beans as a sorted array (derived) */
 	get all(): Bean[] {
-		return sortBeans(Array.from(this.beans.values()));
+		return sortBeans(
+			Array.from(this.beans.values()).filter((b) => !b.path.startsWith('archive/'))
+		);
 	}
 
 	/** Count of beans */

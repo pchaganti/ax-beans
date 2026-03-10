@@ -168,7 +168,7 @@ test.describe('Backlog sorting', () => {
 		await expect(async () => {
 			const parentItem = backlogPage.beanByTitle('Parent Feature');
 			const childTitles = await parentItem
-				.locator('.bean-item button > div > span.text-sm')
+				.locator('.bean-item [role="button"] > div > span.text-sm')
 				.allTextContents();
 			const trimmed = childTitles.map((t) => t.trim());
 			expect(trimmed).toEqual(['Alpha Child', 'Interloper', 'Bravo Child', 'Charlie Child']);
@@ -181,7 +181,7 @@ test.describe('Backlog sorting', () => {
 		await expect(async () => {
 			const parentItem = backlogPage.beanByTitle('Parent Feature');
 			const childTitles = await parentItem
-				.locator('.bean-item button > div > span.text-sm')
+				.locator('.bean-item [role="button"] > div > span.text-sm')
 				.allTextContents();
 			const trimmed = childTitles.map((t) => t.trim());
 			expect(trimmed).toEqual(['Alpha Child', 'Interloper', 'Bravo Child', 'Charlie Child']);

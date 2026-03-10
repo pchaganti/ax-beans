@@ -4,6 +4,8 @@
 	import { worktreeStore } from '$lib/worktrees.svelte';
 	import { agentStatusesStore } from '$lib/agentStatuses.svelte';
 	import { statusColors, typeColors, typeBorders, priorityIndicators } from '$lib/styles';
+	import { client } from '$lib/graphqlClient';
+	import { gql } from 'urql';
 
 	interface Props {
 		bean: Bean;
@@ -17,10 +19,37 @@
 	const childCount = $derived(variant === 'list' ? beansStore.children(bean.id).length : 0);
 	const hasWorktree = $derived(variant !== 'compact' && worktreeStore.hasWorktree(bean.id));
 	const agentRunning = $derived(hasWorktree && agentStatusesStore.isRunning(bean.id));
+	const isArchivable = $derived(bean.status === 'completed' || bean.status === 'scrapped');
+
+	const ARCHIVE_BEAN = gql`
+		mutation ArchiveBean($id: ID!) {
+			archiveBean(id: $id)
+		}
+	`;
+
+	let archiving = $state(false);
+
+	async function handleArchive(e: MouseEvent) {
+		e.stopPropagation();
+		archiving = true;
+		await client.mutation(ARCHIVE_BEAN, { id: bean.id }).toPromise();
+		archiving = false;
+	}
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter' || e.key === ' ') {
+			e.preventDefault();
+			onclick?.();
+		}
+	}
 </script>
 
-<button
+<!-- Using div instead of button so we can nest the archive <button> inside (HTML forbids button-in-button) -->
+<div
 	{onclick}
+	onkeydown={handleKeydown}
+	role="button"
+	tabindex="0"
 	class={[
 		'relative w-full cursor-pointer overflow-hidden text-left transition-all',
 		variant === 'board'
@@ -65,6 +94,14 @@
 			>
 				{bean.type}
 			</span>
+			{#if isArchivable}
+				<button
+					class="icon-[uil--archive] ml-auto size-3.5 text-text-faint hover:text-text-muted transition-colors disabled:opacity-50"
+					title="Archive"
+					onclick={handleArchive}
+					disabled={archiving}
+				></button>
+			{/if}
 		</div>
 	{:else}
 		<!-- List / Compact: single-row layout -->
@@ -84,12 +121,20 @@
 			>
 				{bean.status}
 			</span>
+			{#if isArchivable}
+				<button
+					class="icon-[uil--archive] shrink-0 size-3.5 text-text-faint hover:text-text-muted transition-colors disabled:opacity-50"
+					title="Archive"
+					onclick={handleArchive}
+					disabled={archiving}
+				></button>
+			{/if}
 			{#if variant === 'list' && childCount > 0}
 				<span class="shrink-0 text-[10px] text-text-faint">+{childCount}</span>
 			{/if}
 		</div>
 	{/if}
-</button>
+</div>
 
 <style>
 	.bean-card-agent-pulse {

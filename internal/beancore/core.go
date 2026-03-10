@@ -518,22 +518,24 @@ func (c *Core) Delete(id string) error {
 // Supports short IDs (without prefix) if a prefix is configured.
 func (c *Core) Archive(id string) error {
 	c.mu.Lock()
-	defer c.mu.Unlock()
 
 	// Find the bean
 	targetBean, targetID, err := c.findBeanLocked(id)
 	if err != nil {
+		c.mu.Unlock()
 		return err
 	}
 
 	// Check if already archived
 	if c.isArchivedPath(targetBean.Path) {
+		c.mu.Unlock()
 		return nil // Already archived, nothing to do
 	}
 
 	// Ensure archive directory exists
 	archivePath := filepath.Join(c.root, ArchiveDir)
 	if err := os.MkdirAll(archivePath, 0755); err != nil {
+		c.mu.Unlock()
 		return fmt.Errorf("creating archive directory: %w", err)
 	}
 
@@ -543,12 +545,20 @@ func (c *Core) Archive(id string) error {
 	newPath := filepath.Join(c.root, newRelPath)
 
 	if err := os.Rename(oldPath, newPath); err != nil {
+		c.mu.Unlock()
 		return fmt.Errorf("moving bean to archive: %w", err)
 	}
 
-	// Update bean's path
+	// Update bean's path in store and notify subscribers
 	targetBean.Path = newRelPath
 	c.beans[targetID] = targetBean
+	c.mu.Unlock()
+
+	c.fanOut([]BeanEvent{{
+		Type:   EventUpdated,
+		Bean:   targetBean,
+		BeanID: targetID,
+	}})
 
 	return nil
 }

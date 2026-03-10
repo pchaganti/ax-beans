@@ -5,6 +5,8 @@
 	import { ui } from '$lib/uiState.svelte';
 	import { renderMarkdown } from '$lib/markdown';
 	import { statusColors, typeColors, priorityColors } from '$lib/styles';
+	import { client } from '$lib/graphqlClient';
+	import { gql } from 'urql';
 	import BeanCard from './BeanCard.svelte';
 	import ConfirmModal from './ConfirmModal.svelte';
 
@@ -52,6 +54,24 @@
 	let confirmingDestroy = $state(false);
 
 	let worktreeError = $state<string | null>(null);
+
+	const isArchivable = $derived(bean.status === 'completed' || bean.status === 'scrapped');
+	let archiving = $state(false);
+
+	const ARCHIVE_BEAN = gql`
+		mutation ArchiveBean($id: ID!) {
+			archiveBean(id: $id)
+		}
+	`;
+
+	async function archiveBean() {
+		archiving = true;
+		const result = await client.mutation(ARCHIVE_BEAN, { id: bean.id }).toPromise();
+		if (result.error) {
+			worktreeError = result.error.message;
+		}
+		archiving = false;
+	}
 
 	async function startWork() {
 		startingWork = true;
@@ -127,6 +147,17 @@
 						<span class="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
 					{/if}
 					Start Work
+				</button>
+			{/if}
+			{#if isArchivable}
+				<button
+					class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-md border border-border text-text-muted hover:bg-surface-alt transition-colors disabled:opacity-50"
+					onclick={archiveBean}
+					disabled={archiving}
+					title="Archive this bean"
+				>
+					<span class="icon-[uil--archive] size-4"></span>
+					{archiving ? 'Archiving…' : 'Archive'}
 				</button>
 			{/if}
 			{#if onEdit}

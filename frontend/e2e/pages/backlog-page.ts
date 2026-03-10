@@ -28,21 +28,21 @@ export class BacklogPage {
 
 	/** Get all visible bean titles in display order. */
 	async getBeanTitles(): Promise<string[]> {
-		const titles = await this.beanItems.locator('button > div > span.text-sm').allTextContents();
+		const titles = await this.beanItems.locator('[role="button"] > div > span.text-sm').allTextContents();
 		return titles.map((t) => t.trim());
 	}
 
 	/** Get all visible bean statuses in display order. */
 	async getBeanStatuses(): Promise<string[]> {
 		const statuses = await this.beanItems
-			.locator('button > div > span.rounded-full')
+			.locator('[role="button"] > div > span.rounded-full')
 			.allTextContents();
 		return statuses.map((s) => s.trim());
 	}
 
 	/** Click on a bean by its title. */
 	async selectBean(title: string) {
-		await this.beanItems.filter({ hasText: title }).first().locator('button').click();
+		await this.beanItems.filter({ hasText: title }).first().locator('[role="button"]').click();
 	}
 
 	/** Wait for a specific bean to appear. */
@@ -73,7 +73,7 @@ export class BacklogPage {
 	 * so filtering by text gives us the exact bean's drag handle.
 	 */
 	private draggableByTitle(title: string): Locator {
-		return this.page.locator(`[draggable="true"]:has(button span.text-sm:text-is("${title}"))`);
+		return this.page.locator(`[draggable="true"]:has([role="button"] span.text-sm:text-is("${title}"))`);
 	}
 
 	/**

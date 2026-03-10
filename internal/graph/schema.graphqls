@@ -173,6 +173,12 @@ type Mutation {
   When always is true, Claude Code remembers the permission for the session.
   """
   resolvePermission(beanId: ID!, allow: Boolean!, always: Boolean): Boolean!
+
+  """
+  Archive a bean by moving it to the archive directory.
+  Only beans with archive-eligible statuses (completed, scrapped) can be archived.
+  """
+  archiveBean(id: ID!): Boolean!
 }
 
 """

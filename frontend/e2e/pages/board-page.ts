@@ -25,7 +25,7 @@ export class BoardPage {
 	/** Get all bean titles in a specific column, in display order. */
 	async getColumnTitles(status: string): Promise<string[]> {
 		const col = this.column(status);
-		const cards = col.locator('[role="listitem"] button span.text-sm');
+		const cards = col.locator('[role="listitem"] [role="button"] span.text-sm');
 		const titles = await cards.allTextContents();
 		return titles.map((t) => t.trim());
 	}

@@ -136,7 +136,7 @@ test.describe('Filter', () => {
 
 		await expect(async () => {
 			const todoTitles = await page
-				.locator('[data-status="todo"] [role="listitem"] button span.text-sm')
+				.locator('[data-status="todo"] [role="listitem"] [role="button"] span.text-sm')
 				.allTextContents();
 			expect(todoTitles.map((t) => t.trim())).toEqual(['Alpha']);
 		}).toPass({ timeout: 5_000 });

@@ -630,6 +630,14 @@ func (r *mutationResolver) ResolvePermission(ctx context.Context, beanID string,
 	return true, nil
 }
 
+// ArchiveBean is the resolver for the archiveBean field.
+func (r *mutationResolver) ArchiveBean(ctx context.Context, id string) (bool, error) {
+	if err := r.Core.Archive(id); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Bean is the resolver for the bean field.
 func (r *queryResolver) Bean(ctx context.Context, id string) (*bean.Bean, error) {
 	b, err := r.Core.Get(id)

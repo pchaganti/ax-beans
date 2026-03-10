@@ -5,6 +5,7 @@
 	import { matchesFilter } from '$lib/filter';
 	import { ui } from '$lib/uiState.svelte';
 	import { typeBorders } from '$lib/styles';
+	import { fade } from 'svelte/transition';
 	import BeanCard from './BeanCard.svelte';
 
 	interface Props {
@@ -151,6 +152,7 @@
 						ondragend={onDragEnd}
 						ondragover={(e) => onCardDragOver(e, col.status, index)}
 						role="listitem"
+						transition:fade={{ duration: 150 }}
 					>
 						<BeanCard {bean} variant="board" onclick={() => onSelect?.(bean)} />
 					</div>
