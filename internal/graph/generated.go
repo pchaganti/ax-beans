@@ -64,6 +64,7 @@ type ComplexityRoot struct {
 		PendingInteraction func(childComplexity int) int
 		PlanMode           func(childComplexity int) int
 		Status             func(childComplexity int) int
+		SystemStatus       func(childComplexity int) int
 		YoloMode           func(childComplexity int) int
 	}
 
@@ -256,6 +257,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AgentSession.Status(childComplexity), true
+	case "AgentSession.systemStatus":
+		if e.complexity.AgentSession.SystemStatus == nil {
+			break
+		}
+
+		return e.complexity.AgentSession.SystemStatus(childComplexity), true
 	case "AgentSession.yoloMode":
 		if e.complexity.AgentSession.YoloMode == nil {
 			break
@@ -1497,6 +1504,35 @@ func (ec *executionContext) fieldContext_AgentSession_yoloMode(_ context.Context
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AgentSession_systemStatus(ctx context.Context, field graphql.CollectedField, obj *model.AgentSession) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AgentSession_systemStatus,
+		func(ctx context.Context) (any, error) {
+			return obj.SystemStatus, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AgentSession_systemStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentSession",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3785,6 +3821,8 @@ func (ec *executionContext) fieldContext_Query_agentSession(ctx context.Context,
 				return ec.fieldContext_AgentSession_planMode(ctx, field)
 			case "yoloMode":
 				return ec.fieldContext_AgentSession_yoloMode(ctx, field)
+			case "systemStatus":
+				return ec.fieldContext_AgentSession_systemStatus(ctx, field)
 			case "pendingInteraction":
 				return ec.fieldContext_AgentSession_pendingInteraction(ctx, field)
 			}
@@ -4040,6 +4078,8 @@ func (ec *executionContext) fieldContext_Subscription_agentSessionChanged(ctx co
 				return ec.fieldContext_AgentSession_planMode(ctx, field)
 			case "yoloMode":
 				return ec.fieldContext_AgentSession_yoloMode(ctx, field)
+			case "systemStatus":
+				return ec.fieldContext_AgentSession_systemStatus(ctx, field)
 			case "pendingInteraction":
 				return ec.fieldContext_AgentSession_pendingInteraction(ctx, field)
 			}
@@ -6227,6 +6267,8 @@ func (ec *executionContext) _AgentSession(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "systemStatus":
+			out.Values[i] = ec._AgentSession_systemStatus(ctx, field, obj)
 		case "pendingInteraction":
 			out.Values[i] = ec._AgentSession_pendingInteraction(ctx, field, obj)
 		default:

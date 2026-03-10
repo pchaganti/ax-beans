@@ -59,6 +59,11 @@ func agentSessionToModel(s *agent.Session) *model.AgentSession {
 		pending = &model.PendingInteraction{Type: itype, PlanContent: planContent}
 	}
 
+	var sysStatus *string
+	if s.SystemStatus != "" {
+		sysStatus = &s.SystemStatus
+	}
+
 	return &model.AgentSession{
 		BeanID:             s.ID,
 		AgentType:          s.AgentType,
@@ -67,6 +72,7 @@ func agentSessionToModel(s *agent.Session) *model.AgentSession {
 		Error:              errPtr,
 		PlanMode:           s.PlanMode,
 		YoloMode:           s.YoloMode,
+		SystemStatus:       sysStatus,
 		PendingInteraction: pending,
 	}
 }

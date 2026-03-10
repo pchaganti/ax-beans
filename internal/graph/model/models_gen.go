@@ -35,6 +35,8 @@ type AgentSession struct {
 	PlanMode bool `json:"planMode"`
 	// Whether the agent is in YOLO mode (fully autonomous, no permission prompts)
 	YoloMode bool `json:"yoloMode"`
+	// Transient system status (e.g. 'compacting'), null when idle
+	SystemStatus *string `json:"systemStatus,omitempty"`
 	// Pending blocking interaction awaiting user response
 	PendingInteraction *PendingInteraction `json:"pendingInteraction,omitempty"`
 }

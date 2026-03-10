@@ -209,6 +209,9 @@ func (m *Manager) readOutput(beanID string, stdout io.Reader) {
 		}
 
 		ev := parseStreamLine(line)
+		if ev.Type == eventUnknown {
+			log.Printf("[agent:%s] unhandled event: %s", beanID, string(line))
+		}
 
 		switch ev.Type {
 		case eventAssistantMessage:
@@ -376,9 +379,10 @@ func (m *Manager) readOutput(beanID string, stdout io.Reader) {
 					}
 					m.mu.Lock()
 				}
-				// Reset streaming target so next turn creates a new message
+				// Reset streaming target and transient state
 				s.streamingIdx = -1
 				s.Status = StatusIdle
+				s.SystemStatus = ""
 			}
 			m.mu.Unlock()
 			m.notify(beanID)
@@ -386,6 +390,14 @@ func (m *Manager) readOutput(beanID string, stdout io.Reader) {
 		case eventError:
 			flushToolMsg()
 			m.setError(beanID, ev.Error)
+
+		case eventSystemStatus:
+			m.mu.Lock()
+			if s, ok := m.sessions[beanID]; ok {
+				s.SystemStatus = ev.Text
+			}
+			m.mu.Unlock()
+			m.notify(beanID)
 		}
 	}
 

@@ -22,6 +22,7 @@ export interface AgentSession {
 	error: string | null;
 	planMode: boolean;
 	yoloMode: boolean;
+	systemStatus: string | null;
 	pendingInteraction: PendingInteraction | null;
 }
 
@@ -38,6 +39,7 @@ const AGENT_SESSION_SUBSCRIPTION = gql`
 			error
 			planMode
 			yoloMode
+			systemStatus
 			pendingInteraction {
 				type
 				planContent
@@ -104,6 +106,33 @@ export class AgentChatStore {
 
 					const session = result.data?.agentSessionChanged;
 					if (session) {
+						const prev = this.session;
+
+						// Log new messages (user/tool appear instantly, so count-based works)
+						const prevLen = prev?.messages.length ?? 0;
+						for (let i = prevLen; i < session.messages.length; i++) {
+							const msg = session.messages[i];
+							if (msg.role !== 'ASSISTANT') {
+								console.debug(`[agent:${msg.role}]`, msg.content);
+							}
+						}
+
+						// Log completed assistant messages when turn finishes
+						if (prev?.status === 'RUNNING' && session.status === 'IDLE') {
+							for (const msg of session.messages.slice(prevLen > 0 ? prevLen - 1 : 0)) {
+								if (msg.role === 'ASSISTANT' && msg.content) {
+									console.debug('[agent:ASSISTANT]', msg.content);
+								}
+							}
+						}
+
+						if (session.systemStatus && session.systemStatus !== prev?.systemStatus) {
+							console.debug('[agent:system]', session.systemStatus);
+						}
+						if (session.error && session.error !== prev?.error) {
+							console.debug('[agent:error]', session.error);
+						}
+
 						this.session = session;
 						this.error = null;
 					}

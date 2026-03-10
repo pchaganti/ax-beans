@@ -28,6 +28,9 @@ type streamEvent struct {
 
 	// For error events
 	Error *errorPayload `json:"error,omitempty"`
+
+	// For "system" status events (e.g. compacting)
+	Status string `json:"status,omitempty"`
 }
 
 // innerEvent is the Anthropic API event nested inside a "stream_event" wrapper.
@@ -81,6 +84,7 @@ const (
 	eventToolInputDelta // input_json_delta for tool_use — accumulates tool input JSON
 	eventResult
 	eventError
+	eventSystemStatus // system status change (e.g. "compacting")
 )
 
 // parseStreamLine parses a single JSON line from Claude Code's stream-json output.
@@ -144,6 +148,11 @@ func parseStreamLine(line []byte) parsedEvent {
 			msg = ev.Error.Message
 		}
 		return parsedEvent{Type: eventError, Error: msg}
+
+	case "system":
+		if ev.Subtype == "status" && ev.Status != "" {
+			return parsedEvent{Type: eventSystemStatus, Text: ev.Status}
+		}
 	}
 
 	return parsedEvent{Type: eventUnknown}

@@ -57,8 +57,9 @@ type Session struct {
 	Messages  []Message
 	Error     string // last error message, if status == error
 	WorkDir   string // worktree filesystem path
-	PlanMode  bool   // when true, agent uses --permission-mode plan (read-only)
-	YoloMode  bool   // when true, agent uses --dangerously-skip-permissions (fully autonomous)
+	PlanMode     bool   // when true, agent uses --permission-mode plan (read-only)
+	YoloMode     bool   // when true, agent uses --dangerously-skip-permissions (fully autonomous)
+	SystemStatus string // transient system status (e.g. "compacting"), empty when idle
 
 	// ToolInvocations tracks structured tool calls in the current turn.
 	// Reset on each new user message. Used to find plan files, etc.
@@ -87,6 +88,7 @@ func (s *Session) snapshot() Session {
 		WorkDir:            s.WorkDir,
 		PlanMode:           s.PlanMode,
 		YoloMode:           s.YoloMode,
+		SystemStatus:       s.SystemStatus,
 		PendingInteraction: s.PendingInteraction,
 	}
 	copy(snap.Messages, s.Messages)

@@ -399,6 +399,8 @@ type AgentSession {
   planMode: Boolean!
   "Whether the agent is in YOLO mode (fully autonomous, no permission prompts)"
   yoloMode: Boolean!
+  "Transient system status (e.g. 'compacting'), null when idle"
+  systemStatus: String
   "Pending blocking interaction awaiting user response"
   pendingInteraction: PendingInteraction
 }

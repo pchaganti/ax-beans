@@ -30,6 +30,7 @@
 	const status = $derived(store.session?.status ?? null);
 	const isRunning = $derived(status === 'RUNNING');
 	const sessionError = $derived(store.session?.error ?? null);
+	const systemStatus = $derived(store.session?.systemStatus ?? null);
 	const planMode = $derived(store.session?.planMode ?? false);
 	const yoloMode = $derived(store.session?.yoloMode ?? false);
 	const agentMode = $derived<'plan' | 'act' | 'yolo'>(
@@ -40,6 +41,7 @@
 		store.setPlanMode(beanId, mode === 'plan');
 		store.setYoloMode(beanId, mode === 'yolo');
 	}
+	const activityLabel = $derived(systemStatus ? `${systemStatus}...` : 'thinking...');
 	const pendingInteraction = $derived(store.session?.pendingInteraction ?? null);
 
 	// Render plan content as markdown when available
@@ -176,7 +178,7 @@
 				{:else if isRunning}
 					<div class="flex gap-2 text-text-muted">
 						<span class="shrink-0 select-none">&middot;</span>
-						<span class="animate-pulse">thinking...</span>
+						<span class="animate-pulse">{activityLabel}</span>
 					</div>
 				{/if}
 			{/each}
@@ -184,7 +186,7 @@
 			{#if isRunning && (messages.length === 0 || messages[messages.length - 1].role === 'USER')}
 				<div class="flex gap-2 text-text-muted">
 					<span class="shrink-0 select-none">&middot;</span>
-					<span class="animate-pulse">thinking...</span>
+					<span class="animate-pulse">{activityLabel}</span>
 				</div>
 			{/if}
 		{/if}
@@ -263,7 +265,7 @@
 		{#if isRunning}
 			<div class="flex items-center gap-2 px-1 pb-2 text-text-muted">
 				<span class="agent-spinner"></span>
-				<span class="text-xs font-mono">Agent is working...</span>
+				<span class="text-xs font-mono">{systemStatus ? `Agent is ${systemStatus}...` : 'Agent is working...'}</span>
 			</div>
 		{/if}
 		<div class="flex gap-2 items-end">
@@ -339,13 +341,22 @@
 				</button>
 			</div>
 
-			<button
-				onclick={() => store.clearSession(beanId)}
-				disabled={isRunning || messages.length === 0}
-				class="btn-tab-sm rounded btn-tab-sm-inactive disabled:opacity-30"
-			>
-				Clear
-			</button>
+			<div class={["flex", (isRunning || messages.length === 0) && 'opacity-30 pointer-events-none']}>
+				<button
+					onclick={() => store.sendMessage(beanId, '/compact')}
+					disabled={isRunning || messages.length === 0}
+					class="btn-tab-sm rounded-l btn-tab-sm-inactive"
+				>
+					Compact
+				</button>
+				<button
+					onclick={() => store.clearSession(beanId)}
+					disabled={isRunning || messages.length === 0}
+					class="btn-tab-sm rounded-r border-l-0 btn-tab-sm-inactive"
+				>
+					Clear
+				</button>
+			</div>
 		</div>
 	</div>
 </div>
