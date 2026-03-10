@@ -4,343 +4,343 @@
 button,
 a,
 [role='button'] {
-	cursor: pointer;
+  cursor: pointer;
 }
 
 button:disabled {
-	cursor: not-allowed;
+  cursor: not-allowed;
 }
 
 /* ── Toolbar & button utilities ──────────────── */
 .toolbar {
-	@apply flex h-14 shrink-0 items-center border-b border-border p-4;
+  @apply flex h-14 shrink-0 items-center border-b border-border p-4;
 }
 
 .btn-primary {
-	@apply h-8 rounded-md bg-accent px-3 text-sm font-medium text-accent-text transition-opacity hover:opacity-90;
+  @apply h-8 rounded-md bg-accent px-3 text-sm font-medium text-accent-text transition-opacity hover:opacity-90;
 }
 
 .btn-icon {
-	@apply flex h-6 w-6 items-center justify-center rounded text-text-muted transition-colors hover:bg-surface-alt hover:text-text;
+  @apply flex h-6 w-6 items-center justify-center rounded text-text-muted transition-colors hover:bg-surface-alt hover:text-text;
 }
 
 .btn-tab {
-	@apply h-8 border px-3 py-1 text-sm font-medium transition-colors;
+  @apply h-8 border px-3 py-1 text-sm font-medium transition-colors;
 }
 
 .btn-tab-active {
-	@apply border-accent bg-accent text-accent-text;
+  @apply border-accent bg-accent text-accent-text;
 }
 
 .btn-tab-inactive {
-	@apply border-border bg-surface text-text-muted hover:bg-surface-alt;
+  @apply border-border bg-surface text-text-muted hover:bg-surface-alt;
 }
 
 .btn-tab-sm {
-	@apply inline-flex h-6 items-center gap-1 border px-2 text-xs font-medium transition-colors;
+  @apply inline-flex h-6 items-center gap-1 border px-2 text-xs font-medium transition-colors;
 }
 
 .btn-tab-sm-inactive {
-	@apply border-border bg-surface text-text-faint hover:text-text-muted;
+  @apply border-border bg-surface text-text-faint hover:text-text-muted;
 }
 
 /* ── Bean link ───────────────────────────────── */
 .bean-link {
-	@apply inline-flex cursor-pointer rounded bg-accent/10 px-1 align-baseline font-mono text-[0.85em] whitespace-nowrap text-accent no-underline transition-colors hover:border-accent/45 hover:bg-accent/20;
+  @apply inline-flex cursor-pointer rounded bg-accent/10 px-1 align-baseline font-mono text-[0.85em] whitespace-nowrap text-accent no-underline transition-colors hover:border-accent/45 hover:bg-accent/20;
 }
 
 /* ── Prose: markdown body styling ────────────── */
 .prose {
-	@apply text-sm leading-relaxed text-text;
+  @apply text-sm leading-relaxed text-text;
 }
 
 .prose :is(p, ul, ol, blockquote, pre, hr, table) {
-	@apply my-3;
+  @apply my-3;
 }
 
 .prose :is(h1, h2, h3, h4, h5, h6) {
-	@apply my-3 first:mt-0;
+  @apply my-3 first:mt-0;
 }
 
 .prose :is(p, li):first-child {
-	@apply mt-0;
+  @apply mt-0;
 }
 
 .prose :is(p, li):last-child {
-	@apply mb-0;
+  @apply mb-0;
 }
 
 .prose a:not(.bean-link) {
-	@apply text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent;
+  @apply text-accent underline decoration-accent/40 underline-offset-2 hover:decoration-accent;
 }
 
 .prose strong {
-	@apply font-semibold text-text;
+  @apply font-semibold text-text;
 }
 
 .prose ul {
-	@apply list-disc pl-6;
+  @apply list-disc pl-6;
 }
 
 .prose ol {
-	@apply list-decimal pl-6;
+  @apply list-decimal pl-6;
 }
 
 .prose li {
-	@apply my-1;
+  @apply my-1;
 }
 
 .prose li > ul,
 .prose li > ol {
-	@apply my-1;
+  @apply my-1;
 }
 
 .prose blockquote {
-	@apply border-l-2 border-border pl-4 text-text-muted italic;
+  @apply border-l-2 border-border pl-4 text-text-muted italic;
 }
 
 .prose hr {
-	@apply border-border;
+  @apply border-border;
 }
 
 .prose table {
-	@apply w-full text-left text-sm;
+  @apply w-full text-left text-sm;
 }
 
 .prose th {
-	@apply border-b border-border px-3 py-1.5 font-semibold text-text;
+  @apply border-b border-border px-3 py-1.5 font-semibold text-text;
 }
 
 .prose td {
-	@apply border-b border-border/50 px-3 py-1.5;
+  @apply border-b border-border/50 px-3 py-1.5;
 }
 
 .prose pre {
-	@apply overflow-x-auto rounded-md text-sm leading-relaxed;
+  @apply overflow-x-auto rounded-md text-sm leading-relaxed;
 }
 
 /* ── Shiki code blocks ──────────────────────── */
 .prose pre.shiki {
-	@apply p-4;
-	color: var(--shiki-light);
-	background-color: var(--th-md-code-bg);
+  @apply p-4;
+  color: var(--shiki-light);
+  background-color: var(--th-md-code-bg);
 
-	--code-scroll-shadow: color-mix(in srgb, black 8%, transparent);
+  --code-scroll-shadow: color-mix(in srgb, black 8%, transparent);
 
-	/* Scroll-aware fade shadows: the opaque covers sit on top via local attachment
+  /* Scroll-aware fade shadows: the opaque covers sit on top via local attachment
 	   and slide away as you scroll, revealing the translucent shadow beneath. */
-	background-image:
+  background-image:
 		/* left cover (scrolls with content) */
-		linear-gradient(to right, var(--th-md-code-bg) 1rem, transparent),
-		/* right cover (scrolls with content) */
-		linear-gradient(to left, var(--th-md-code-bg) 1rem, transparent),
-		/* left shadow (fixed) */ linear-gradient(to right, var(--code-scroll-shadow), transparent),
-		/* right shadow (fixed) */ linear-gradient(to left, var(--code-scroll-shadow), transparent);
-	background-position: left, right, left, right;
-	background-size:
-		3rem 100%,
-		3rem 100%,
-		2rem 100%,
-		2rem 100%;
-	background-attachment: local, local, scroll, scroll;
-	background-repeat: no-repeat;
+    linear-gradient(to right, var(--th-md-code-bg) 1rem, transparent),
+    /* right cover (scrolls with content) */
+    linear-gradient(to left, var(--th-md-code-bg) 1rem, transparent),
+    /* left shadow (fixed) */ linear-gradient(to right, var(--code-scroll-shadow), transparent),
+    /* right shadow (fixed) */ linear-gradient(to left, var(--code-scroll-shadow), transparent);
+  background-position: left, right, left, right;
+  background-size:
+    3rem 100%,
+    3rem 100%,
+    2rem 100%,
+    2rem 100%;
+  background-attachment: local, local, scroll, scroll;
+  background-repeat: no-repeat;
 }
 
 @media (prefers-color-scheme: dark) {
-	.prose pre.shiki {
-		color: var(--shiki-dark);
-		background-color: var(--th-md-code-bg);
-	}
+  .prose pre.shiki {
+    color: var(--shiki-dark);
+    background-color: var(--th-md-code-bg);
+  }
 }
 
 .prose pre.shiki .line span {
-	color: var(--shiki-light);
+  color: var(--shiki-light);
 }
 
 @media (prefers-color-scheme: dark) {
-	.prose pre.shiki .line span {
-		color: var(--shiki-dark);
-	}
+  .prose pre.shiki .line span {
+    color: var(--shiki-dark);
+  }
 }
 
 /* Line numbers via CSS counter */
 .prose pre.shiki code {
-	counter-reset: line;
+  counter-reset: line;
 }
 
 .prose pre.shiki .line {
-	@apply inline-block w-full;
+  @apply inline-block w-full;
 }
 
 .prose pre.shiki .line::before {
-	counter-increment: line;
-	content: counter(line);
-	@apply mr-4 inline-block w-8 text-right text-text-faint select-none;
+  counter-increment: line;
+  content: counter(line);
+  @apply mr-4 inline-block w-8 text-right text-text-faint select-none;
 }
 
 .prose :not(pre) > code {
-	@apply rounded bg-(--th-md-code-bg) px-1.5 py-0.5 text-[0.85em];
+  @apply rounded bg-(--th-md-code-bg) px-1.5 py-0.5 text-[0.85em];
 }
 
 .prose img {
-	@apply my-3 rounded;
+  @apply my-3 rounded;
 }
 
 /* ── Light palette (default) ─────────────────── */
 :root {
-	color-scheme: light dark;
+  color-scheme: light dark;
 
-	--th-surface: var(--color-white);
-	--th-surface-alt: var(--color-gray-50);
-	--th-surface-dim: var(--color-gray-100);
-	--th-border: var(--color-gray-200);
-	--th-text: var(--color-gray-900);
-	--th-text-muted: var(--color-gray-500);
-	--th-text-faint: var(--color-gray-400);
-	--th-accent: var(--color-blue-400);
-	--th-accent-text: var(--color-white);
-	--th-danger: var(--color-red-600);
-	--th-warning: var(--color-amber-600);
-	--th-success: var(--color-green-600);
-	--th-info: var(--color-blue-600);
+  --th-surface: var(--color-white);
+  --th-surface-alt: var(--color-gray-50);
+  --th-surface-dim: var(--color-gray-100);
+  --th-border: var(--color-gray-200);
+  --th-text: var(--color-gray-900);
+  --th-text-muted: var(--color-gray-500);
+  --th-text-faint: var(--color-gray-400);
+  --th-accent: var(--color-blue-400);
+  --th-accent-text: var(--color-white);
+  --th-danger: var(--color-red-600);
+  --th-warning: var(--color-amber-600);
+  --th-success: var(--color-green-600);
+  --th-info: var(--color-blue-600);
 
-	/* Status colors (bg + text pairs) */
-	--th-status-draft-bg: var(--color-gray-100);
-	--th-status-draft-text: var(--color-gray-500);
-	--th-status-todo-bg: var(--color-green-100);
-	--th-status-todo-text: var(--color-green-700);
-	--th-status-in-progress-bg: var(--color-blue-100);
-	--th-status-in-progress-text: var(--color-blue-700);
-	--th-status-completed-bg: var(--color-purple-100);
-	--th-status-completed-text: var(--color-purple-700);
-	--th-status-scrapped-bg: var(--color-red-100);
-	--th-status-scrapped-text: var(--color-red-700);
-	--th-status-blocked-bg: var(--color-amber-100);
-	--th-status-blocked-text: var(--color-amber-700);
+  /* Status colors (bg + text pairs) */
+  --th-status-draft-bg: var(--color-gray-100);
+  --th-status-draft-text: var(--color-gray-500);
+  --th-status-todo-bg: var(--color-green-100);
+  --th-status-todo-text: var(--color-green-700);
+  --th-status-in-progress-bg: var(--color-blue-100);
+  --th-status-in-progress-text: var(--color-blue-700);
+  --th-status-completed-bg: var(--color-purple-100);
+  --th-status-completed-text: var(--color-purple-700);
+  --th-status-scrapped-bg: var(--color-red-100);
+  --th-status-scrapped-text: var(--color-red-700);
+  --th-status-blocked-bg: var(--color-amber-100);
+  --th-status-blocked-text: var(--color-amber-700);
 
-	/* Type colors (bg + text + border) */
-	--th-type-milestone-bg: var(--color-purple-100);
-	--th-type-milestone-text: var(--color-purple-700);
-	--th-type-milestone-border: var(--color-purple-400);
-	--th-type-epic-bg: var(--color-indigo-100);
-	--th-type-epic-text: var(--color-indigo-700);
-	--th-type-epic-border: var(--color-indigo-400);
-	--th-type-feature-bg: var(--color-cyan-100);
-	--th-type-feature-text: var(--color-cyan-700);
-	--th-type-feature-border: var(--color-cyan-400);
-	--th-type-bug-bg: var(--color-red-100);
-	--th-type-bug-text: var(--color-red-700);
-	--th-type-bug-border: var(--color-red-400);
-	--th-type-task-bg: var(--color-gray-100);
-	--th-type-task-text: var(--color-gray-500);
-	--th-type-task-border: var(--color-gray-200);
+  /* Type colors (bg + text + border) */
+  --th-type-milestone-bg: var(--color-purple-100);
+  --th-type-milestone-text: var(--color-purple-700);
+  --th-type-milestone-border: var(--color-purple-400);
+  --th-type-epic-bg: var(--color-indigo-100);
+  --th-type-epic-text: var(--color-indigo-700);
+  --th-type-epic-border: var(--color-indigo-400);
+  --th-type-feature-bg: var(--color-cyan-100);
+  --th-type-feature-text: var(--color-cyan-700);
+  --th-type-feature-border: var(--color-cyan-400);
+  --th-type-bug-bg: var(--color-red-100);
+  --th-type-bug-text: var(--color-red-700);
+  --th-type-bug-border: var(--color-red-400);
+  --th-type-task-bg: var(--color-gray-100);
+  --th-type-task-text: var(--color-gray-500);
+  --th-type-task-border: var(--color-gray-200);
 
-	/* Markdown heading colors */
-	--th-md-h1: var(--color-slate-800);
-	--th-md-h2: var(--color-slate-700);
-	--th-md-h3: var(--color-slate-600);
-	--th-md-h456: var(--color-slate-500);
-	--th-md-h1-border: var(--color-slate-200);
-	--th-md-code-bg: var(--color-slate-100);
+  /* Markdown heading colors */
+  --th-md-h1: var(--color-slate-800);
+  --th-md-h2: var(--color-slate-700);
+  --th-md-h3: var(--color-slate-600);
+  --th-md-h456: var(--color-slate-500);
+  --th-md-h1-border: var(--color-slate-200);
+  --th-md-code-bg: var(--color-slate-100);
 }
 
 /* ── Dark palette ────────────────────────────── */
 @media (prefers-color-scheme: dark) {
-	:root {
-		--th-surface: var(--color-zinc-900);
-		--th-surface-alt: var(--color-zinc-800);
-		--th-surface-dim: var(--color-zinc-700);
-		--th-border: var(--color-zinc-700);
-		--th-text: var(--color-zinc-300);
-		--th-text-muted: var(--color-zinc-400);
-		--th-text-faint: var(--color-zinc-500);
-		--th-accent: var(--color-sky-400);
-		--th-accent-text: var(--color-zinc-900);
-		--th-danger: var(--color-red-500);
-		--th-warning: var(--color-amber-500);
-		--th-success: var(--color-green-500);
-		--th-info: var(--color-blue-400);
+  :root {
+    --th-surface: var(--color-zinc-900);
+    --th-surface-alt: var(--color-zinc-800);
+    --th-surface-dim: var(--color-zinc-700);
+    --th-border: var(--color-zinc-700);
+    --th-text: var(--color-zinc-300);
+    --th-text-muted: var(--color-zinc-400);
+    --th-text-faint: var(--color-zinc-500);
+    --th-accent: var(--color-sky-400);
+    --th-accent-text: var(--color-zinc-900);
+    --th-danger: var(--color-red-500);
+    --th-warning: var(--color-amber-500);
+    --th-success: var(--color-green-500);
+    --th-info: var(--color-blue-400);
 
-		--th-status-draft-bg: var(--color-zinc-700);
-		--th-status-draft-text: var(--color-zinc-400);
-		--th-status-todo-bg: var(--color-green-900);
-		--th-status-todo-text: var(--color-green-400);
-		--th-status-in-progress-bg: var(--color-sky-900);
-		--th-status-in-progress-text: var(--color-blue-300);
-		--th-status-completed-bg: var(--color-purple-900);
-		--th-status-completed-text: var(--color-purple-300);
-		--th-status-scrapped-bg: var(--color-red-950);
-		--th-status-scrapped-text: var(--color-red-300);
-		--th-status-blocked-bg: var(--color-amber-950);
-		--th-status-blocked-text: var(--color-amber-300);
+    --th-status-draft-bg: var(--color-zinc-700);
+    --th-status-draft-text: var(--color-zinc-400);
+    --th-status-todo-bg: var(--color-green-900);
+    --th-status-todo-text: var(--color-green-400);
+    --th-status-in-progress-bg: var(--color-sky-900);
+    --th-status-in-progress-text: var(--color-blue-300);
+    --th-status-completed-bg: var(--color-purple-900);
+    --th-status-completed-text: var(--color-purple-300);
+    --th-status-scrapped-bg: var(--color-red-950);
+    --th-status-scrapped-text: var(--color-red-300);
+    --th-status-blocked-bg: var(--color-amber-950);
+    --th-status-blocked-text: var(--color-amber-300);
 
-		--th-type-milestone-bg: var(--color-purple-950);
-		--th-type-milestone-text: var(--color-purple-300);
-		--th-type-milestone-border: var(--color-purple-500);
-		--th-type-epic-bg: var(--color-indigo-950);
-		--th-type-epic-text: var(--color-indigo-300);
-		--th-type-epic-border: var(--color-indigo-500);
-		--th-type-feature-bg: var(--color-cyan-950);
-		--th-type-feature-text: var(--color-cyan-300);
-		--th-type-feature-border: var(--color-cyan-600);
-		--th-type-bug-bg: var(--color-red-900);
-		--th-type-bug-text: var(--color-red-300);
-		--th-type-bug-border: var(--color-red-500);
-		--th-type-task-bg: var(--color-zinc-800);
-		--th-type-task-text: var(--color-zinc-400);
-		--th-type-task-border: var(--color-zinc-600);
+    --th-type-milestone-bg: var(--color-purple-950);
+    --th-type-milestone-text: var(--color-purple-300);
+    --th-type-milestone-border: var(--color-purple-500);
+    --th-type-epic-bg: var(--color-indigo-950);
+    --th-type-epic-text: var(--color-indigo-300);
+    --th-type-epic-border: var(--color-indigo-500);
+    --th-type-feature-bg: var(--color-cyan-950);
+    --th-type-feature-text: var(--color-cyan-300);
+    --th-type-feature-border: var(--color-cyan-600);
+    --th-type-bug-bg: var(--color-red-900);
+    --th-type-bug-text: var(--color-red-300);
+    --th-type-bug-border: var(--color-red-500);
+    --th-type-task-bg: var(--color-zinc-800);
+    --th-type-task-text: var(--color-zinc-400);
+    --th-type-task-border: var(--color-zinc-600);
 
-		--th-md-h1: var(--color-blue-300);
-		--th-md-h2: var(--color-slate-300);
-		--th-md-h3: var(--color-slate-400);
-		--th-md-h456: var(--color-slate-400);
-		--th-md-h1-border: var(--color-zinc-600);
-		--th-md-code-bg: var(--color-zinc-800);
-	}
+    --th-md-h1: var(--color-blue-300);
+    --th-md-h2: var(--color-slate-300);
+    --th-md-h3: var(--color-slate-400);
+    --th-md-h456: var(--color-slate-400);
+    --th-md-h1-border: var(--color-zinc-600);
+    --th-md-code-bg: var(--color-zinc-800);
+  }
 }
 
 /* ── Tailwind theme tokens (reference CSS vars) ── */
 @theme inline {
-	--color-surface: var(--th-surface);
-	--color-surface-alt: var(--th-surface-alt);
-	--color-surface-dim: var(--th-surface-dim);
-	--color-border: var(--th-border);
-	--color-text: var(--th-text);
-	--color-text-muted: var(--th-text-muted);
-	--color-text-faint: var(--th-text-faint);
-	--color-accent: var(--th-accent);
-	--color-accent-text: var(--th-accent-text);
-	--color-danger: var(--th-danger);
-	--color-warning: var(--th-warning);
-	--color-success: var(--th-success);
-	--color-info: var(--th-info);
+  --color-surface: var(--th-surface);
+  --color-surface-alt: var(--th-surface-alt);
+  --color-surface-dim: var(--th-surface-dim);
+  --color-border: var(--th-border);
+  --color-text: var(--th-text);
+  --color-text-muted: var(--th-text-muted);
+  --color-text-faint: var(--th-text-faint);
+  --color-accent: var(--th-accent);
+  --color-accent-text: var(--th-accent-text);
+  --color-danger: var(--th-danger);
+  --color-warning: var(--th-warning);
+  --color-success: var(--th-success);
+  --color-info: var(--th-info);
 
-	--color-status-draft-bg: var(--th-status-draft-bg);
-	--color-status-draft-text: var(--th-status-draft-text);
-	--color-status-todo-bg: var(--th-status-todo-bg);
-	--color-status-todo-text: var(--th-status-todo-text);
-	--color-status-in-progress-bg: var(--th-status-in-progress-bg);
-	--color-status-in-progress-text: var(--th-status-in-progress-text);
-	--color-status-completed-bg: var(--th-status-completed-bg);
-	--color-status-completed-text: var(--th-status-completed-text);
-	--color-status-scrapped-bg: var(--th-status-scrapped-bg);
-	--color-status-scrapped-text: var(--th-status-scrapped-text);
-	--color-status-blocked-bg: var(--th-status-blocked-bg);
-	--color-status-blocked-text: var(--th-status-blocked-text);
+  --color-status-draft-bg: var(--th-status-draft-bg);
+  --color-status-draft-text: var(--th-status-draft-text);
+  --color-status-todo-bg: var(--th-status-todo-bg);
+  --color-status-todo-text: var(--th-status-todo-text);
+  --color-status-in-progress-bg: var(--th-status-in-progress-bg);
+  --color-status-in-progress-text: var(--th-status-in-progress-text);
+  --color-status-completed-bg: var(--th-status-completed-bg);
+  --color-status-completed-text: var(--th-status-completed-text);
+  --color-status-scrapped-bg: var(--th-status-scrapped-bg);
+  --color-status-scrapped-text: var(--th-status-scrapped-text);
+  --color-status-blocked-bg: var(--th-status-blocked-bg);
+  --color-status-blocked-text: var(--th-status-blocked-text);
 
-	--color-type-milestone-bg: var(--th-type-milestone-bg);
-	--color-type-milestone-text: var(--th-type-milestone-text);
-	--color-type-milestone-border: var(--th-type-milestone-border);
-	--color-type-epic-bg: var(--th-type-epic-bg);
-	--color-type-epic-text: var(--th-type-epic-text);
-	--color-type-epic-border: var(--th-type-epic-border);
-	--color-type-feature-bg: var(--th-type-feature-bg);
-	--color-type-feature-text: var(--th-type-feature-text);
-	--color-type-feature-border: var(--th-type-feature-border);
-	--color-type-bug-bg: var(--th-type-bug-bg);
-	--color-type-bug-text: var(--th-type-bug-text);
-	--color-type-bug-border: var(--th-type-bug-border);
-	--color-type-task-bg: var(--th-type-task-bg);
-	--color-type-task-text: var(--th-type-task-text);
-	--color-type-task-border: var(--th-type-task-border);
+  --color-type-milestone-bg: var(--th-type-milestone-bg);
+  --color-type-milestone-text: var(--th-type-milestone-text);
+  --color-type-milestone-border: var(--th-type-milestone-border);
+  --color-type-epic-bg: var(--th-type-epic-bg);
+  --color-type-epic-text: var(--th-type-epic-text);
+  --color-type-epic-border: var(--th-type-epic-border);
+  --color-type-feature-bg: var(--th-type-feature-bg);
+  --color-type-feature-text: var(--th-type-feature-text);
+  --color-type-feature-border: var(--th-type-feature-border);
+  --color-type-bug-bg: var(--th-type-bug-bg);
+  --color-type-bug-text: var(--th-type-bug-text);
+  --color-type-bug-border: var(--th-type-bug-border);
+  --color-type-task-bg: var(--th-type-task-bg);
+  --color-type-task-text: var(--th-type-task-text);
+  --color-type-task-border: var(--th-type-task-border);
 }

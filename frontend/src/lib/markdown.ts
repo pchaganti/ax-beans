@@ -37,106 +37,106 @@ import langLua from 'shiki/langs/lua.mjs';
 import langElixir from 'shiki/langs/elixir.mjs';
 
 const BUNDLED_LANGS = [
-	langJavascript,
-	langTypescript,
-	langJsx,
-	langTsx,
-	langGo,
-	langBash,
-	langJson,
-	langYaml,
-	langMarkdown,
-	langGraphql,
-	langDiff,
-	langRuby,
-	langPython,
-	langRust,
-	langSql,
-	langHtml,
-	langCss,
-	langSvelte,
-	langToml,
-	langDockerfile,
-	langC,
-	langCpp,
-	langJava,
-	langPhp,
-	langSwift,
-	langKotlin,
-	langCsharp,
-	langLua,
-	langElixir
+  langJavascript,
+  langTypescript,
+  langJsx,
+  langTsx,
+  langGo,
+  langBash,
+  langJson,
+  langYaml,
+  langMarkdown,
+  langGraphql,
+  langDiff,
+  langRuby,
+  langPython,
+  langRust,
+  langSql,
+  langHtml,
+  langCss,
+  langSvelte,
+  langToml,
+  langDockerfile,
+  langC,
+  langCpp,
+  langJava,
+  langPhp,
+  langSwift,
+  langKotlin,
+  langCsharp,
+  langLua,
+  langElixir
 ];
 
 // Languages we have bundled (including aliases)
 const SUPPORTED_LANGS = new Set([
-	'javascript',
-	'js',
-	'typescript',
-	'ts',
-	'go',
-	'bash',
-	'sh',
-	'shell',
-	'zsh',
-	'json',
-	'yaml',
-	'yml',
-	'markdown',
-	'md',
-	'graphql',
-	'gql',
-	'diff',
-	'ruby',
-	'rb',
-	'python',
-	'py',
-	'rust',
-	'rs',
-	'sql',
-	'html',
-	'css',
-	'svelte',
-	'jsx',
-	'tsx',
-	'toml',
-	'dockerfile',
-	'docker',
-	'c',
-	'cpp',
-	'c++',
-	'java',
-	'php',
-	'swift',
-	'kotlin',
-	'kt',
-	'csharp',
-	'c#',
-	'cs',
-	'lua',
-	'elixir',
-	'ex'
+  'javascript',
+  'js',
+  'typescript',
+  'ts',
+  'go',
+  'bash',
+  'sh',
+  'shell',
+  'zsh',
+  'json',
+  'yaml',
+  'yml',
+  'markdown',
+  'md',
+  'graphql',
+  'gql',
+  'diff',
+  'ruby',
+  'rb',
+  'python',
+  'py',
+  'rust',
+  'rs',
+  'sql',
+  'html',
+  'css',
+  'svelte',
+  'jsx',
+  'tsx',
+  'toml',
+  'dockerfile',
+  'docker',
+  'c',
+  'cpp',
+  'c++',
+  'java',
+  'php',
+  'swift',
+  'kotlin',
+  'kt',
+  'csharp',
+  'c#',
+  'cs',
+  'lua',
+  'elixir',
+  'ex'
 ]);
 
 // Common language aliases
 const LANG_ALIASES: Record<string, string> = {
-	js: 'javascript',
-	ts: 'typescript',
-	sh: 'bash',
-	zsh: 'bash',
-	shell: 'bash',
-	yml: 'yaml',
-	md: 'markdown',
-	gql: 'graphql',
-	rb: 'ruby',
-	py: 'python',
-	rs: 'rust',
-	docker: 'dockerfile',
-	'c++': 'cpp',
-	kt: 'kotlin',
-	'c#': 'csharp',
-	cs: 'csharp',
-	ex: 'elixir'
+  js: 'javascript',
+  ts: 'typescript',
+  sh: 'bash',
+  zsh: 'bash',
+  shell: 'bash',
+  yml: 'yaml',
+  md: 'markdown',
+  gql: 'graphql',
+  rb: 'ruby',
+  py: 'python',
+  rs: 'rust',
+  docker: 'dockerfile',
+  'c++': 'cpp',
+  kt: 'kotlin',
+  'c#': 'csharp',
+  cs: 'csharp',
+  ex: 'elixir'
 };
 
 let highlighter: HighlighterCore | null = null;
@@ -147,57 +147,54 @@ let highlighterPromise: Promise<HighlighterCore> | null = null;
  * Only works in browser - returns null during SSR.
  */
 async function getHighlighter(): Promise<HighlighterCore | null> {
-	if (!browser) return null;
+  if (!browser) return null;
 
-	if (highlighter) return highlighter;
-	if (highlighterPromise) return highlighterPromise;
+  if (highlighter) return highlighter;
+  if (highlighterPromise) return highlighterPromise;
 
-	highlighterPromise = createHighlighterCore({
-		engine: createOnigurumaEngine(import('shiki/wasm')),
-		themes: [githubDark, githubLight],
-		langs: BUNDLED_LANGS
-	});
+  highlighterPromise = createHighlighterCore({
+    engine: createOnigurumaEngine(import('shiki/wasm')),
+    themes: [githubDark, githubLight],
+    langs: BUNDLED_LANGS
+  });
 
-	highlighter = await highlighterPromise;
-	return highlighter;
+  highlighter = await highlighterPromise;
+  return highlighter;
 }
 
 /**
  * Custom marked extension for shiki syntax highlighting
  */
 function shikiExtension(hl: HighlighterCore): MarkedExtension {
-	return {
-		renderer: {
-			code({ text, lang }) {
-				const rawLang = (lang || '').toLowerCase();
-				const language = LANG_ALIASES[rawLang] || rawLang;
+  return {
+    renderer: {
+      code({ text, lang }) {
+        const rawLang = (lang || '').toLowerCase();
+        const language = LANG_ALIASES[rawLang] || rawLang;
 
-				// Only highlight supported languages
-				if (SUPPORTED_LANGS.has(rawLang) || SUPPORTED_LANGS.has(language)) {
-					try {
-						return hl.codeToHtml(text, {
-							lang: language,
-							themes: {
-								light: 'github-light',
-								dark: 'github-dark'
-							},
-							defaultColor: false,
-							cssVariablePrefix: '--shiki-'
-						});
-					} catch {
-						// Fall through to plain rendering
-					}
-				}
+        // Only highlight supported languages
+        if (SUPPORTED_LANGS.has(rawLang) || SUPPORTED_LANGS.has(language)) {
+          try {
+            return hl.codeToHtml(text, {
+              lang: language,
+              themes: {
+                light: 'github-light',
+                dark: 'github-dark'
+              },
+              defaultColor: false,
+              cssVariablePrefix: '--shiki-'
+            });
+          } catch {
+            // Fall through to plain rendering
+          }
+        }
 
-				// Fallback for unsupported languages
-				const escaped = text
-					.replace(/&/g, '&amp;')
-					.replace(/</g, '&lt;')
-					.replace(/>/g, '&gt;');
-				return `<pre class="shiki"><code>${escaped}</code></pre>`;
-			}
-		}
-	};
+        // Fallback for unsupported languages
+        const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return `<pre class="shiki"><code>${escaped}</code></pre>`;
+      }
+    }
+  };
 }
 
 /**
@@ -205,32 +202,32 @@ function shikiExtension(hl: HighlighterCore): MarkedExtension {
  * Renders as <a data-bean-id="beans-xxxx"> so click handlers can navigate.
  */
 function beanLinkExtension(): MarkedExtension {
-	return {
-		extensions: [
-			{
-				name: 'beanLink',
-				level: 'inline',
-				start(src: string) {
-					return src.match(/beans-/)?.index;
-				},
-				tokenizer(src: string) {
-					const match = src.match(/^beans-[a-z0-9]{4}\b/);
-					if (match) {
-						return {
-							type: 'beanLink',
-							raw: match[0],
-							beanId: match[0]
-						};
-					}
-					return undefined;
-				},
-				renderer(token) {
-					const beanId = (token as Record<string, unknown>).beanId as string;
-					return `<a data-bean-id="${beanId}" class="bean-link">${beanId}</a>`;
-				}
-			}
-		]
-	};
+  return {
+    extensions: [
+      {
+        name: 'beanLink',
+        level: 'inline',
+        start(src: string) {
+          return src.match(/beans-/)?.index;
+        },
+        tokenizer(src: string) {
+          const match = src.match(/^beans-[a-z0-9]{4}\b/);
+          if (match) {
+            return {
+              type: 'beanLink',
+              raw: match[0],
+              beanId: match[0]
+            };
+          }
+          return undefined;
+        },
+        renderer(token) {
+          const beanId = (token as Record<string, unknown>).beanId as string;
+          return `<a data-bean-id="${beanId}" class="bean-link">${beanId}</a>`;
+        }
+      }
+    ]
+  };
 }
 
 /**
@@ -238,51 +235,48 @@ function beanLinkExtension(): MarkedExtension {
  * Falls back to plain code blocks during SSR.
  */
 export async function renderMarkdown(content: string): Promise<string> {
-	if (!content) return '';
+  if (!content) return '';
 
-	const md = new Marked();
-	md.use({ gfm: true, breaks: true });
-	md.use(beanLinkExtension());
-	md.use({
-		renderer: {
-			link({ href, title, tokens }) {
-				const text = this.parser.parseInline(tokens);
-				const titleAttr = title ? ` title="${title}"` : '';
-				return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
-			}
-		}
-	});
+  const md = new Marked();
+  md.use({ gfm: true, breaks: true });
+  md.use(beanLinkExtension());
+  md.use({
+    renderer: {
+      link({ href, title, tokens }) {
+        const text = this.parser.parseInline(tokens);
+        const titleAttr = title ? ` title="${title}"` : '';
+        return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
+      }
+    }
+  });
 
-	const hl = await getHighlighter();
-	if (hl) {
-		md.use(shikiExtension(hl));
-	} else {
-		md.use(plainCodeExtension());
-	}
+  const hl = await getHighlighter();
+  if (hl) {
+    md.use(shikiExtension(hl));
+  } else {
+    md.use(plainCodeExtension());
+  }
 
-	return md.parse(content) as string;
+  return md.parse(content) as string;
 }
 
 /**
  * Plain code block extension for SSR (no syntax highlighting)
  */
 function plainCodeExtension(): MarkedExtension {
-	return {
-		renderer: {
-			code({ text }) {
-				const escaped = text
-					.replace(/&/g, '&amp;')
-					.replace(/</g, '&lt;')
-					.replace(/>/g, '&gt;');
-				return `<pre class="shiki"><code>${escaped}</code></pre>`;
-			}
-		}
-	};
+  return {
+    renderer: {
+      code({ text }) {
+        const escaped = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return `<pre class="shiki"><code>${escaped}</code></pre>`;
+      }
+    }
+  };
 }
 
 /**
  * Pre-initialize the highlighter (call on app start for faster first render)
  */
 export function preloadHighlighter(): void {
-	getHighlighter().catch(console.error);
+  getHighlighter().catch(console.error);
 }

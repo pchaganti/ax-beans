@@ -18,136 +18,136 @@ import { applyDrop, applyReparent } from '$lib/dragOrder';
 export type DropMode = 'reorder' | 'reparent';
 
 class BacklogDragState {
-	draggedBeanId = $state<string | null>(null);
-	/** The parent ID of the sibling group being hovered (null = top-level) */
-	dropTargetParent = $state<string | null | undefined>(undefined);
-	dropIndex = $state<number | null>(null);
-	/** The bean ID being hovered for reparenting */
-	reparentTargetId = $state<string | null>(null);
-	dropMode = $state<DropMode>('reorder');
+  draggedBeanId = $state<string | null>(null);
+  /** The parent ID of the sibling group being hovered (null = top-level) */
+  dropTargetParent = $state<string | null | undefined>(undefined);
+  dropIndex = $state<number | null>(null);
+  /** The bean ID being hovered for reparenting */
+  reparentTargetId = $state<string | null>(null);
+  dropMode = $state<DropMode>('reorder');
 
-	get isDragging() {
-		return this.draggedBeanId !== null;
-	}
+  get isDragging() {
+    return this.draggedBeanId !== null;
+  }
 
-	startDrag(e: DragEvent, bean: Bean) {
-		this.draggedBeanId = bean.id;
-		e.dataTransfer!.effectAllowed = 'move';
-		e.dataTransfer!.setData('text/plain', bean.id);
-	}
+  startDrag(e: DragEvent, bean: Bean) {
+    this.draggedBeanId = bean.id;
+    e.dataTransfer!.effectAllowed = 'move';
+    e.dataTransfer!.setData('text/plain', bean.id);
+  }
 
-	endDrag() {
-		this.draggedBeanId = null;
-		this.dropTargetParent = undefined;
-		this.dropIndex = null;
-		this.reparentTargetId = null;
-		this.dropMode = 'reorder';
-	}
+  endDrag() {
+    this.draggedBeanId = null;
+    this.dropTargetParent = undefined;
+    this.dropIndex = null;
+    this.reparentTargetId = null;
+    this.dropMode = 'reorder';
+  }
 
-	hoverCard(e: DragEvent, parentId: string | null, index: number, beanId: string) {
-		e.preventDefault();
-		e.stopPropagation();
-		e.dataTransfer!.dropEffect = 'move';
+  hoverCard(e: DragEvent, parentId: string | null, index: number, beanId: string) {
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer!.dropEffect = 'move';
 
-		// Don't allow dropping on yourself
-		if (beanId === this.draggedBeanId) return;
+    // Don't allow dropping on yourself
+    if (beanId === this.draggedBeanId) return;
 
-		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
-		const relativeY = (e.clientY - rect.top) / rect.height;
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const relativeY = (e.clientY - rect.top) / rect.height;
 
-		if (relativeY < 0.25) {
-			// Top zone — reorder above
-			this.dropMode = 'reorder';
-			this.dropTargetParent = parentId;
-			this.dropIndex = index;
-			this.reparentTargetId = null;
-		} else if (relativeY > 0.75) {
-			// Bottom zone — reorder below
-			this.dropMode = 'reorder';
-			this.dropTargetParent = parentId;
-			this.dropIndex = index + 1;
-			this.reparentTargetId = null;
-		} else {
-			// Middle zone — reparent onto this bean
-			this.dropMode = 'reparent';
-			this.reparentTargetId = beanId;
-			this.dropTargetParent = undefined;
-			this.dropIndex = null;
-		}
-	}
+    if (relativeY < 0.25) {
+      // Top zone — reorder above
+      this.dropMode = 'reorder';
+      this.dropTargetParent = parentId;
+      this.dropIndex = index;
+      this.reparentTargetId = null;
+    } else if (relativeY > 0.75) {
+      // Bottom zone — reorder below
+      this.dropMode = 'reorder';
+      this.dropTargetParent = parentId;
+      this.dropIndex = index + 1;
+      this.reparentTargetId = null;
+    } else {
+      // Middle zone — reparent onto this bean
+      this.dropMode = 'reparent';
+      this.reparentTargetId = beanId;
+      this.dropTargetParent = undefined;
+      this.dropIndex = null;
+    }
+  }
 
-	hoverList(e: DragEvent, parentId: string | null, beanCount: number) {
-		e.preventDefault();
-		e.dataTransfer!.dropEffect = 'move';
-		this.dropMode = 'reorder';
-		this.reparentTargetId = null;
-		this.dropTargetParent = parentId;
-		if (this.dropIndex === null || this.dropTargetParent !== parentId) {
-			this.dropIndex = beanCount;
-		}
-	}
+  hoverList(e: DragEvent, parentId: string | null, beanCount: number) {
+    e.preventDefault();
+    e.dataTransfer!.dropEffect = 'move';
+    this.dropMode = 'reorder';
+    this.reparentTargetId = null;
+    this.dropTargetParent = parentId;
+    if (this.dropIndex === null || this.dropTargetParent !== parentId) {
+      this.dropIndex = beanCount;
+    }
+  }
 
-	leaveList(e: DragEvent, listEl: HTMLElement, parentId: string | null) {
-		if (!listEl.contains(e.relatedTarget as Node)) {
-			if (this.dropTargetParent === parentId) {
-				this.dropTargetParent = undefined;
-				this.dropIndex = null;
-			}
-			if (this.reparentTargetId) {
-				this.reparentTargetId = null;
-			}
-		}
-	}
+  leaveList(e: DragEvent, listEl: HTMLElement, parentId: string | null) {
+    if (!listEl.contains(e.relatedTarget as Node)) {
+      if (this.dropTargetParent === parentId) {
+        this.dropTargetParent = undefined;
+        this.dropIndex = null;
+      }
+      if (this.reparentTargetId) {
+        this.reparentTargetId = null;
+      }
+    }
+  }
 
-	drop(e: DragEvent, parentId: string | null, beans: Bean[]) {
-		e.preventDefault();
-		e.stopPropagation();
+  drop(e: DragEvent, parentId: string | null, beans: Bean[]) {
+    e.preventDefault();
+    e.stopPropagation();
 
-		const mode = this.dropMode;
-		const targetIdx = this.dropIndex;
-		const beanId = this.draggedBeanId;
-		const reparentTarget = this.reparentTargetId;
+    const mode = this.dropMode;
+    const targetIdx = this.dropIndex;
+    const beanId = this.draggedBeanId;
+    const reparentTarget = this.reparentTargetId;
 
-		this.dropTargetParent = undefined;
-		this.dropIndex = null;
-		this.draggedBeanId = null;
-		this.reparentTargetId = null;
-		this.dropMode = 'reorder';
+    this.dropTargetParent = undefined;
+    this.dropIndex = null;
+    this.draggedBeanId = null;
+    this.reparentTargetId = null;
+    this.dropMode = 'reorder';
 
-		if (!beanId) return;
+    if (!beanId) return;
 
-		if (mode === 'reparent' && reparentTarget) {
-			const targetChildren = beansStore.children(reparentTarget);
-			applyReparent(beanId, reparentTarget, targetChildren);
-		} else {
-			applyDrop(beans, beanId, targetIdx ?? beans.length, { newParentId: parentId });
-		}
-	}
+    if (mode === 'reparent' && reparentTarget) {
+      const targetChildren = beansStore.children(reparentTarget);
+      applyReparent(beanId, reparentTarget, targetChildren);
+    } else {
+      applyDrop(beans, beanId, targetIdx ?? beans.length, { newParentId: parentId });
+    }
+  }
 
-	/** Check if a drop indicator should show at this position */
-	showIndicator(parentId: string | null, index: number, beanId: string): boolean {
-		return (
-			this.dropMode === 'reorder' &&
-			this.dropTargetParent === parentId &&
-			this.draggedBeanId !== null &&
-			this.draggedBeanId !== beanId &&
-			this.dropIndex === index
-		);
-	}
+  /** Check if a drop indicator should show at this position */
+  showIndicator(parentId: string | null, index: number, beanId: string): boolean {
+    return (
+      this.dropMode === 'reorder' &&
+      this.dropTargetParent === parentId &&
+      this.draggedBeanId !== null &&
+      this.draggedBeanId !== beanId &&
+      this.dropIndex === index
+    );
+  }
 
-	showEndIndicator(parentId: string | null, count: number): boolean {
-		return (
-			this.dropMode === 'reorder' &&
-			this.dropTargetParent === parentId &&
-			this.draggedBeanId !== null &&
-			this.dropIndex === count
-		);
-	}
+  showEndIndicator(parentId: string | null, count: number): boolean {
+    return (
+      this.dropMode === 'reorder' &&
+      this.dropTargetParent === parentId &&
+      this.draggedBeanId !== null &&
+      this.dropIndex === count
+    );
+  }
 
-	/** Check if this bean is the reparent target */
-	isReparentTarget(beanId: string): boolean {
-		return this.dropMode === 'reparent' && this.reparentTargetId === beanId;
-	}
+  /** Check if this bean is the reparent target */
+  isReparentTarget(beanId: string): boolean {
+    return this.dropMode === 'reparent' && this.reparentTargetId === beanId;
+  }
 }
 
 export const backlogDrag = new BacklogDragState();

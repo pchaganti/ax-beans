@@ -3,108 +3,108 @@ import { pipe, subscribe } from 'wonka';
 import { client } from './graphqlClient';
 
 export interface Worktree {
-	beanId: string;
-	branch: string;
-	path: string;
+  beanId: string;
+  branch: string;
+  path: string;
 }
 
 const WORKTREES_SUBSCRIPTION = gql`
-	subscription WorktreesChanged {
-		worktreesChanged {
-			beanId
-			branch
-			path
-		}
-	}
+  subscription WorktreesChanged {
+    worktreesChanged {
+      beanId
+      branch
+      path
+    }
+  }
 `;
 
 const START_WORK = gql`
-	mutation StartWork($beanId: ID!) {
-		startWork(beanId: $beanId) {
-			beanId
-			branch
-			path
-		}
-	}
+  mutation StartWork($beanId: ID!) {
+    startWork(beanId: $beanId) {
+      beanId
+      branch
+      path
+    }
+  }
 `;
 
 const STOP_WORK = gql`
-	mutation StopWork($beanId: ID!) {
-		stopWork(beanId: $beanId)
-	}
+  mutation StopWork($beanId: ID!) {
+    stopWork(beanId: $beanId)
+  }
 `;
 
 class WorktreeStore {
-	worktrees = $state<Worktree[]>([]);
-	loading = $state(false);
-	error = $state<string | null>(null);
+  worktrees = $state<Worktree[]>([]);
+  loading = $state(false);
+  error = $state<string | null>(null);
 
-	#unsubscribe: (() => void) | null = null;
+  #unsubscribe: (() => void) | null = null;
 
-	subscribe(): void {
-		if (this.#unsubscribe) return;
+  subscribe(): void {
+    if (this.#unsubscribe) return;
 
-		const { unsubscribe } = pipe(
-			client.subscription(WORKTREES_SUBSCRIPTION, {}),
-			subscribe((result: { data?: { worktreesChanged?: Worktree[] }; error?: Error }) => {
-				if (result.error) {
-					console.error('Worktree subscription error:', result.error);
-					this.error = result.error.message;
-					return;
-				}
+    const { unsubscribe } = pipe(
+      client.subscription(WORKTREES_SUBSCRIPTION, {}),
+      subscribe((result: { data?: { worktreesChanged?: Worktree[] }; error?: Error }) => {
+        if (result.error) {
+          console.error('Worktree subscription error:', result.error);
+          this.error = result.error.message;
+          return;
+        }
 
-				const wts = result.data?.worktreesChanged;
-				if (wts) {
-					this.worktrees = wts;
-				}
-			})
-		);
+        const wts = result.data?.worktreesChanged;
+        if (wts) {
+          this.worktrees = wts;
+        }
+      })
+    );
 
-		this.#unsubscribe = unsubscribe;
-	}
+    this.#unsubscribe = unsubscribe;
+  }
 
-	unsubscribe(): void {
-		if (this.#unsubscribe) {
-			this.#unsubscribe();
-			this.#unsubscribe = null;
-		}
-	}
+  unsubscribe(): void {
+    if (this.#unsubscribe) {
+      this.#unsubscribe();
+      this.#unsubscribe = null;
+    }
+  }
 
-	async startWork(beanId: string): Promise<boolean> {
-		this.loading = true;
-		this.error = null;
+  async startWork(beanId: string): Promise<boolean> {
+    this.loading = true;
+    this.error = null;
 
-		const result = await client.mutation(START_WORK, { beanId }).toPromise();
+    const result = await client.mutation(START_WORK, { beanId }).toPromise();
 
-		this.loading = false;
+    this.loading = false;
 
-		if (result.error) {
-			this.error = result.error.message;
-			return false;
-		}
+    if (result.error) {
+      this.error = result.error.message;
+      return false;
+    }
 
-		return true;
-	}
+    return true;
+  }
 
-	async stopWork(beanId: string): Promise<boolean> {
-		this.loading = true;
-		this.error = null;
+  async stopWork(beanId: string): Promise<boolean> {
+    this.loading = true;
+    this.error = null;
 
-		const result = await client.mutation(STOP_WORK, { beanId }).toPromise();
+    const result = await client.mutation(STOP_WORK, { beanId }).toPromise();
 
-		this.loading = false;
+    this.loading = false;
 
-		if (result.error) {
-			this.error = result.error.message;
-			return false;
-		}
+    if (result.error) {
+      this.error = result.error.message;
+      return false;
+    }
 
-		return true;
-	}
+    return true;
+  }
 
-	hasWorktree(beanId: string): boolean {
-		return this.worktrees.some((wt) => wt.beanId === beanId);
-	}
+  hasWorktree(beanId: string): boolean {
+    return this.worktrees.some((wt) => wt.beanId === beanId);
+  }
 }
 
 export const worktreeStore = new WorktreeStore();

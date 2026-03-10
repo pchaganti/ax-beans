@@ -6,55 +6,55 @@ import { sveltekit } from '@sveltejs/kit/vite';
 const backendPort = process.env.BEANS_PORT || '22880';
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit()],
+  plugins: [tailwindcss(), sveltekit()],
 
-	build: {
-		// Shiki wasm + grammars produce large chunks; this is an embedded app, not a public site
-		chunkSizeWarningLimit: 2600
-	},
+  build: {
+    // Shiki wasm + grammars produce large chunks; this is an embedded app, not a public site
+    chunkSizeWarningLimit: 2600
+  },
 
-	server: {
-		// Proxy some URL routes to the Go backend process in development.
-		proxy: {
-			'/api': {
-				target: `http://localhost:${backendPort}`,
-				ws: true,
-				changeOrigin: true
-			}
-		}
-	},
+  server: {
+    // Proxy some URL routes to the Go backend process in development.
+    proxy: {
+      '/api': {
+        target: `http://localhost:${backendPort}`,
+        ws: true,
+        changeOrigin: true
+      }
+    }
+  },
 
-	test: {
-		expect: { requireAssertions: true },
+  test: {
+    expect: { requireAssertions: true },
 
-		projects: [
-			{
-				extends: './vite.config.ts',
+    projects: [
+      {
+        extends: './vite.config.ts',
 
-				test: {
-					name: 'client',
+        test: {
+          name: 'client',
 
-					browser: {
-						enabled: true,
-						provider: playwright(),
-						instances: [{ browser: 'chromium', headless: true }]
-					},
+          browser: {
+            enabled: true,
+            provider: playwright(),
+            instances: [{ browser: 'chromium', headless: true }]
+          },
 
-					include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
-					exclude: ['src/lib/server/**']
-				}
-			},
+          include: ['src/**/*.svelte.{test,spec}.{js,ts}'],
+          exclude: ['src/lib/server/**']
+        }
+      },
 
-			{
-				extends: './vite.config.ts',
+      {
+        extends: './vite.config.ts',
 
-				test: {
-					name: 'server',
-					environment: 'node',
-					include: ['src/**/*.{test,spec}.{js,ts}'],
-					exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
-				}
-			}
-		]
-	}
+        test: {
+          name: 'server',
+          environment: 'node',
+          include: ['src/**/*.{test,spec}.{js,ts}'],
+          exclude: ['src/**/*.svelte.{test,spec}.{js,ts}']
+        }
+      }
+    ]
+  }
 });

@@ -7,20 +7,20 @@ import { client } from './graphqlClient';
  * Bean type matching the GraphQL schema
  */
 export interface Bean {
-	id: string;
-	slug: string | null;
-	path: string;
-	title: string;
-	status: string;
-	type: string;
-	priority: string;
-	tags: string[];
-	createdAt: string;
-	updatedAt: string;
-	body: string;
-	order: string;
-	parentId: string | null;
-	blockingIds: string[];
+  id: string;
+  slug: string | null;
+  path: string;
+  title: string;
+  status: string;
+  type: string;
+  priority: string;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  body: string;
+  order: string;
+  parentId: string | null;
+  blockingIds: string[];
 }
 
 /**
@@ -32,37 +32,37 @@ type ChangeType = 'INITIAL' | 'INITIAL_SYNC_COMPLETE' | 'CREATED' | 'UPDATED' | 
  * Bean change event from GraphQL subscription
  */
 interface BeanChangeEvent {
-	type: ChangeType;
-	beanId: string;
-	bean: Bean | null;
+  type: ChangeType;
+  beanId: string;
+  bean: Bean | null;
 }
 
 /**
  * GraphQL subscription for bean changes with initial state support
  */
 const BEAN_CHANGED_SUBSCRIPTION = gql`
-	subscription BeanChanged($includeInitial: Boolean!) {
-		beanChanged(includeInitial: $includeInitial) {
-			type
-			beanId
-			bean {
-				id
-				slug
-				path
-				title
-				status
-				type
-				priority
-				tags
-				createdAt
-				updatedAt
-				body
-				order
-				parentId
-				blockingIds
-			}
-		}
-	}
+  subscription BeanChanged($includeInitial: Boolean!) {
+    beanChanged(includeInitial: $includeInitial) {
+      type
+      beanId
+      bean {
+        id
+        slug
+        path
+        title
+        status
+        type
+        priority
+        tags
+        createdAt
+        updatedAt
+        body
+        order
+        parentId
+        blockingIds
+      }
+    }
+  }
 `;
 
 /**
@@ -70,149 +70,147 @@ const BEAN_CHANGED_SUBSCRIPTION = gql`
  * Frontend equivalent of beancore on the backend.
  */
 export class BeansStore {
-	/** All beans indexed by ID */
-	beans = $state(new SvelteMap<string, Bean>());
+  /** All beans indexed by ID */
+  beans = $state(new SvelteMap<string, Bean>());
 
-	/** Loading state (true until first non-initial event or subscription fully synced) */
-	loading = $state(true);
+  /** Loading state (true until first non-initial event or subscription fully synced) */
+  loading = $state(true);
 
-	/** Error state */
-	error = $state<string | null>(null);
+  /** Error state */
+  error = $state<string | null>(null);
 
-	/** Whether subscription is connected */
-	connected = $state(false);
+  /** Whether subscription is connected */
+  connected = $state(false);
 
-	/** Whether initial sync is complete */
-	#initialSyncDone = false;
+  /** Whether initial sync is complete */
+  #initialSyncDone = false;
 
-	/** Subscription teardown function */
-	#unsubscribe: (() => void) | null = null;
+  /** Subscription teardown function */
+  #unsubscribe: (() => void) | null = null;
 
-	/** All non-archived beans as a sorted array (derived) */
-	get all(): Bean[] {
-		return sortBeans(
-			Array.from(this.beans.values()).filter((b) => !b.path.startsWith('archive/'))
-		);
-	}
+  /** All non-archived beans as a sorted array (derived) */
+  get all(): Bean[] {
+    return sortBeans(Array.from(this.beans.values()).filter((b) => !b.path.startsWith('archive/')));
+  }
 
-	/** Count of beans */
-	get count(): number {
-		return this.beans.size;
-	}
+  /** Count of beans */
+  get count(): number {
+    return this.beans.size;
+  }
 
-	/**
-	 * Start subscription to bean changes with initial state.
-	 * This is the primary method to initialize the store - it subscribes to changes
-	 * and receives all current beans as initial events, eliminating race conditions.
-	 */
-	subscribe(): void {
-		if (this.#unsubscribe) {
-			return; // Already subscribed
-		}
+  /**
+   * Start subscription to bean changes with initial state.
+   * This is the primary method to initialize the store - it subscribes to changes
+   * and receives all current beans as initial events, eliminating race conditions.
+   */
+  subscribe(): void {
+    if (this.#unsubscribe) {
+      return; // Already subscribed
+    }
 
-		this.loading = true;
-		this.error = null;
-		this.#initialSyncDone = false;
+    this.loading = true;
+    this.error = null;
+    this.#initialSyncDone = false;
 
-		const { unsubscribe } = pipe(
-			client.subscription(BEAN_CHANGED_SUBSCRIPTION, { includeInitial: true }),
-			subscribe((result: { data?: { beanChanged?: BeanChangeEvent }; error?: Error }) => {
-				if (result.error) {
-					console.error('Subscription error:', result.error);
-					this.connected = false;
-					this.error = result.error.message;
-					this.loading = false;
-					return;
-				}
+    const { unsubscribe } = pipe(
+      client.subscription(BEAN_CHANGED_SUBSCRIPTION, { includeInitial: true }),
+      subscribe((result: { data?: { beanChanged?: BeanChangeEvent }; error?: Error }) => {
+        if (result.error) {
+          console.error('Subscription error:', result.error);
+          this.connected = false;
+          this.error = result.error.message;
+          this.loading = false;
+          return;
+        }
 
-				this.connected = true;
+        this.connected = true;
 
-				const event = result.data?.beanChanged as BeanChangeEvent | undefined;
-				if (!event) return;
+        const event = result.data?.beanChanged as BeanChangeEvent | undefined;
+        if (!event) return;
 
-				switch (event.type) {
-					case 'INITIAL':
-						if (event.bean) {
-							this.beans.set(event.bean.id, event.bean);
-						}
-						break;
-					case 'INITIAL_SYNC_COMPLETE':
-						// Server explicitly signals initial sync is done
-						this.#initialSyncDone = true;
-						this.loading = false;
-						break;
-					case 'CREATED':
-					case 'UPDATED':
-						if (event.bean) {
-							this.beans.set(event.bean.id, event.bean);
-						}
-						break;
-					case 'DELETED':
-						this.beans.delete(event.beanId);
-						break;
-				}
-			})
-		);
+        switch (event.type) {
+          case 'INITIAL':
+            if (event.bean) {
+              this.beans.set(event.bean.id, event.bean);
+            }
+            break;
+          case 'INITIAL_SYNC_COMPLETE':
+            // Server explicitly signals initial sync is done
+            this.#initialSyncDone = true;
+            this.loading = false;
+            break;
+          case 'CREATED':
+          case 'UPDATED':
+            if (event.bean) {
+              this.beans.set(event.bean.id, event.bean);
+            }
+            break;
+          case 'DELETED':
+            this.beans.delete(event.beanId);
+            break;
+        }
+      })
+    );
 
-		this.#unsubscribe = unsubscribe;
-	}
+    this.#unsubscribe = unsubscribe;
+  }
 
-	/**
-	 * Stop subscription to bean changes.
-	 */
-	unsubscribe(): void {
-		if (this.#unsubscribe) {
-			this.#unsubscribe();
-			this.#unsubscribe = null;
-			this.connected = false;
-		}
-	}
+  /**
+   * Stop subscription to bean changes.
+   */
+  unsubscribe(): void {
+    if (this.#unsubscribe) {
+      this.#unsubscribe();
+      this.#unsubscribe = null;
+      this.connected = false;
+    }
+  }
 
-	/**
-	 * Get a bean by ID
-	 */
-	get(id: string): Bean | undefined {
-		return this.beans.get(id);
-	}
+  /**
+   * Get a bean by ID
+   */
+  get(id: string): Bean | undefined {
+    return this.beans.get(id);
+  }
 
-	/**
-	 * Get beans filtered by status
-	 */
-	byStatus(status: string): Bean[] {
-		return this.all.filter((b) => b.status === status);
-	}
+  /**
+   * Get beans filtered by status
+   */
+  byStatus(status: string): Bean[] {
+    return this.all.filter((b) => b.status === status);
+  }
 
-	/**
-	 * Get beans filtered by type
-	 */
-	byType(type: string): Bean[] {
-		return this.all.filter((b) => b.type === type);
-	}
+  /**
+   * Get beans filtered by type
+   */
+  byType(type: string): Bean[] {
+    return this.all.filter((b) => b.type === type);
+  }
 
-	/**
-	 * Get children of a bean (beans with this bean as parent)
-	 */
-	children(parentId: string): Bean[] {
-		return this.all.filter((b) => b.parentId === parentId);
-	}
+  /**
+   * Get children of a bean (beans with this bean as parent)
+   */
+  children(parentId: string): Bean[] {
+    return this.all.filter((b) => b.parentId === parentId);
+  }
 
-	/**
-	 * Get beans that are blocking a given bean
-	 */
-	blockedBy(beanId: string): Bean[] {
-		return this.all.filter((b) => b.blockingIds.includes(beanId));
-	}
+  /**
+   * Get beans that are blocking a given bean
+   */
+  blockedBy(beanId: string): Bean[] {
+    return this.all.filter((b) => b.blockingIds.includes(beanId));
+  }
 
-	/**
-	 * Optimistically update a bean's fields in the local store.
-	 * The subscription will eventually confirm or overwrite.
-	 */
-	optimisticUpdate(id: string, fields: Partial<Bean>): void {
-		const bean = this.beans.get(id);
-		if (bean) {
-			this.beans.set(id, { ...bean, ...fields });
-		}
-	}
+  /**
+   * Optimistically update a bean's fields in the local store.
+   * The subscription will eventually confirm or overwrite.
+   */
+  optimisticUpdate(id: string, fields: Partial<Bean>): void {
+    const bean = this.beans.get(id);
+    if (bean) {
+      this.beans.set(id, { ...bean, ...fields });
+    }
+  }
 }
 
 /**
@@ -224,9 +222,9 @@ const PRIORITY_ORDER = ['critical', 'high', 'normal', 'low', 'deferred'];
 const TYPE_ORDER = ['milestone', 'epic', 'bug', 'feature', 'task'];
 
 function orderOf(value: string, order: string[], defaultTo?: string): number {
-	if (!value && defaultTo) value = defaultTo;
-	const idx = order.indexOf(value);
-	return idx >= 0 ? idx : order.length;
+  if (!value && defaultTo) value = defaultTo;
+  const idx = order.indexOf(value);
+  return idx >= 0 ? idx : order.length;
 }
 
 /**
@@ -234,29 +232,30 @@ function orderOf(value: string, order: string[], defaultTo?: string): number {
  * SortByStatusPriorityAndType from internal/bean/sort.go.
  */
 export function sortBeans(beans: Bean[]): Bean[] {
-	return beans.toSorted((a, b) => {
-		// Primary: status
-		let d = orderOf(a.status, STATUS_ORDER) - orderOf(b.status, STATUS_ORDER);
-		if (d !== 0) return d;
+  return beans.toSorted((a, b) => {
+    // Primary: status
+    let d = orderOf(a.status, STATUS_ORDER) - orderOf(b.status, STATUS_ORDER);
+    if (d !== 0) return d;
 
-		// Secondary: manual order (fractional index) — beans with order come first
-		if (a.order && b.order) {
-			if (a.order < b.order) return -1;
-			if (a.order > b.order) return 1;
-		} else if (a.order && !b.order) return -1;
-		else if (!a.order && b.order) return 1;
+    // Secondary: manual order (fractional index) — beans with order come first
+    if (a.order && b.order) {
+      if (a.order < b.order) return -1;
+      if (a.order > b.order) return 1;
+    } else if (a.order && !b.order) return -1;
+    else if (!a.order && b.order) return 1;
 
-		// Tertiary: priority (empty = normal)
-		d = orderOf(a.priority, PRIORITY_ORDER, 'normal') - orderOf(b.priority, PRIORITY_ORDER, 'normal');
-		if (d !== 0) return d;
+    // Tertiary: priority (empty = normal)
+    d =
+      orderOf(a.priority, PRIORITY_ORDER, 'normal') - orderOf(b.priority, PRIORITY_ORDER, 'normal');
+    if (d !== 0) return d;
 
-		// Quaternary: type
-		d = orderOf(a.type, TYPE_ORDER) - orderOf(b.type, TYPE_ORDER);
-		if (d !== 0) return d;
+    // Quaternary: type
+    d = orderOf(a.type, TYPE_ORDER) - orderOf(b.type, TYPE_ORDER);
+    if (d !== 0) return d;
 
-		// Final: title (case-insensitive)
-		return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
-	});
+    // Final: title (case-insensitive)
+    return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
+  });
 }
 
 /**
