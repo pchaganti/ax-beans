@@ -110,6 +110,71 @@ a,
 	@apply border-b border-border/50 px-3 py-1.5;
 }
 
+.prose pre {
+	@apply overflow-x-auto rounded-md text-sm leading-relaxed;
+}
+
+/* ── Shiki code blocks ──────────────────────── */
+.prose pre.shiki {
+	@apply p-4;
+	color: var(--shiki-light);
+	background-color: var(--th-md-code-bg);
+
+	--code-scroll-shadow: color-mix(in srgb, black 8%, transparent);
+
+	/* Scroll-aware fade shadows: the opaque covers sit on top via local attachment
+	   and slide away as you scroll, revealing the translucent shadow beneath. */
+	background-image:
+		/* left cover (scrolls with content) */
+		linear-gradient(to right, var(--th-md-code-bg) 1rem, transparent),
+		/* right cover (scrolls with content) */
+		linear-gradient(to left, var(--th-md-code-bg) 1rem, transparent),
+		/* left shadow (fixed) */
+		linear-gradient(to right, var(--code-scroll-shadow), transparent),
+		/* right shadow (fixed) */
+		linear-gradient(to left, var(--code-scroll-shadow), transparent);
+	background-position: left, right, left, right;
+	background-size: 3rem 100%, 3rem 100%, 2rem 100%, 2rem 100%;
+	background-attachment: local, local, scroll, scroll;
+	background-repeat: no-repeat;
+}
+
+@media (prefers-color-scheme: dark) {
+	.prose pre.shiki {
+		color: var(--shiki-dark);
+		background-color: var(--th-md-code-bg);
+	}
+}
+
+.prose pre.shiki .line span {
+	color: var(--shiki-light);
+}
+
+@media (prefers-color-scheme: dark) {
+	.prose pre.shiki .line span {
+		color: var(--shiki-dark);
+	}
+}
+
+/* Line numbers via CSS counter */
+.prose pre.shiki code {
+	counter-reset: line;
+}
+
+.prose pre.shiki .line {
+	@apply inline-block w-full;
+}
+
+.prose pre.shiki .line::before {
+	counter-increment: line;
+	content: counter(line);
+	@apply mr-4 inline-block w-8 text-right text-text-faint select-none;
+}
+
+.prose :not(pre) > code {
+	@apply rounded bg-(--th-md-code-bg) px-1.5 py-0.5 text-[0.85em];
+}
+
 .prose img {
 	@apply my-3 rounded;
 }

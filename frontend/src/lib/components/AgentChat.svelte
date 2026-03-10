@@ -359,8 +359,9 @@
 		}
 	}
 
-	/* Ensure rendered markdown inherits monospace and uniform font size */
-	.agent-prose :global(*) {
+	/* Ensure rendered markdown inherits monospace and uniform font size,
+	   but exclude code blocks so Shiki highlighting renders properly */
+	.agent-prose :global(*:not(pre, pre *, code)) {
 		font-family: inherit;
 		font-size: inherit;
 	}
@@ -373,12 +374,5 @@
 	.agent-prose :global(h6) {
 		font-size: inherit;
 		font-weight: bold;
-	}
-
-	.agent-prose :global(code:not(pre code)) {
-		color: var(--th-text);
-		background-color: var(--th-md-code-bg);
-		padding: 0.125rem 0.375rem;
-		border-radius: 0.25rem;
 	}
 </style>
