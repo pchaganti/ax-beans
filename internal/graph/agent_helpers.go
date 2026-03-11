@@ -189,6 +189,7 @@ var agentActions = []agentActionDef{
 1. Mark bean %s as completed (update its status).
 2. If there are uncommitted changes, create a commit (following the usual commit guidelines).
 3. Merge into main WITHOUT switching to or modifying main's working directory (another agent may be working there). Do this from the worktree:
+   - Ensure the main repo accepts pushes to checked-out branches: git -C "$(git rev-parse --git-common-dir)/.." config receive.denyCurrentBranch updateInstead
    - First, merge main into this branch to incorporate any new changes: git merge main
    - Resolve any merge conflicts if needed.
    - Then update main's branch pointer: git push . HEAD:main
