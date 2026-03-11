@@ -10,6 +10,7 @@
   import { ui } from '$lib/uiState.svelte';
   import BeanForm from '$lib/components/BeanForm.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
+  import SplitPane from '$lib/components/SplitPane.svelte';
 
   preloadHighlighter();
 
@@ -60,12 +61,12 @@
       </div>
     </div>
   {:else}
-    <div class="flex min-h-0 flex-1">
-      <Sidebar />
-      <div class="flex min-h-0 min-w-0 flex-1 flex-col">
-        {@render children()}
-      </div>
-    </div>
+    <SplitPane direction="horizontal" side="start" initialSize={224} minSize={150} maxSize={400} persistKey="sidebar">
+      {#snippet aside()}
+        <Sidebar />
+      {/snippet}
+      {@render children()}
+    </SplitPane>
   {/if}
 </div>
 

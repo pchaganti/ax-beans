@@ -5,6 +5,8 @@
     direction?: 'horizontal' | 'vertical';
     side?: 'start' | 'end';
     initialSize?: number;
+    minSize?: number;
+    maxSize?: number;
     persistKey?: string;
     collapsed?: boolean;
     children: Snippet;
@@ -15,13 +17,13 @@
     direction = 'horizontal',
     side = 'end',
     initialSize = 350,
+    minSize = 40,
+    maxSize,
     persistKey,
     collapsed = false,
     children,
     aside
   }: Props = $props();
-
-  const MIN_SIZE = 40; // 10 tailwind units
 
   let size = $state(getInitialSize());
 
@@ -38,7 +40,7 @@
       if (saved) {
         const parsed = parseInt(saved, 10);
         if (!Number.isNaN(parsed)) {
-          size = Math.max(MIN_SIZE, parsed);
+          size = Math.max(minSize, maxSize ? Math.min(parsed, maxSize) : parsed);
         }
       }
     }
@@ -66,8 +68,9 @@
       newSize = containerEnd - mousePos;
     }
 
-    // Clamp: aside pane gets at least MIN_SIZE, and leave MIN_SIZE for the main pane too
-    size = Math.max(MIN_SIZE, Math.min(containerSize - MIN_SIZE, newSize));
+    // Clamp: aside pane gets at least minSize, and leave minSize for the main pane too
+    const upperBound = maxSize ? Math.min(maxSize, containerSize - minSize) : containerSize - minSize;
+    size = Math.max(minSize, Math.min(upperBound, newSize));
   }
 
   function stopDrag() {
@@ -109,8 +112,8 @@
         role="slider"
         aria-orientation={isHorizontal ? 'horizontal' : 'vertical'}
         aria-valuenow={size}
-        aria-valuemin={MIN_SIZE}
-        aria-valuemax={999}
+        aria-valuemin={minSize}
+        aria-valuemax={maxSize ?? 999}
         tabindex="0"
         onmousedown={startDrag}
       ></div>
@@ -137,8 +140,8 @@
         role="slider"
         aria-orientation={isHorizontal ? 'horizontal' : 'vertical'}
         aria-valuenow={size}
-        aria-valuemin={MIN_SIZE}
-        aria-valuemax={999}
+        aria-valuemin={minSize}
+        aria-valuemax={maxSize ?? 999}
         tabindex="0"
         onmousedown={startDrag}
       ></div>

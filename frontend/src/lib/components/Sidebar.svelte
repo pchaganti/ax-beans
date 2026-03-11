@@ -12,7 +12,7 @@
   );
 </script>
 
-<nav class="flex h-full w-56 shrink-0 flex-col border-r border-border bg-surface-alt">
+<nav class="flex h-full flex-col bg-surface-alt">
   <div class="flex h-14 shrink-0 items-center border-b border-border px-3">
     <span class="text-sm font-semibold text-text">beans</span>
   </div>
