@@ -1,22 +1,31 @@
 # Beans configuration
 # See: https://github.com/hmans/beans
 beans:
-    # Directory where bean files are stored
-    path: .beans
-    # Prefix for bean IDs (e.g., "myproject-abc1")
-    prefix: beans-
-    # Length of the random ID suffix
-    id_length: 4
-    # Default status for new beans
-    default_status: todo
-    # Default type for new beans
-    default_type: task
+  # Directory where bean files are stored
+  path: .beans
+  # Prefix for bean IDs (e.g., "myproject-abc1")
+  prefix: beans-
+  # Length of the random ID suffix
+  id_length: 4
+  # Default status for new beans
+  default_status: todo
+  # Default type for new beans
+  default_type: task
 worktree:
-    # Git ref to use as the base for new worktree branches (default: main)
-    base_ref: main
+  # Git ref to use as the base for new worktree branches (default: main)
+  base_ref: main
 agent:
-    # Default mode for agent sessions (act, plan)
-    default_mode: act
+  # Default mode for agent sessions (act, plan)
+  default_mode: act
+  # Action buttons shown in the agent chat UI
+  actions:
+    - label: Commit
+      prompt: |
+        Create a commit. If you have just implemented a change,
+        only commit changes related to that change. If you haven't,
+        please examine the git diff and commit whatever changes you see.
+    - label: Review
+      prompt: Ask a subagent for a thorough code review.
 server:
-    # Port for the web UI (used by `beans-serve`)
-    port: 8080
+  # Port for the web UI (used by `beans-serve`)
+  port: 8080

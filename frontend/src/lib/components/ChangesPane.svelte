@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { changesStore } from '$lib/changes.svelte';
   import { ui } from '$lib/uiState.svelte';
+  import { agentActionsStore } from '$lib/agentActions.svelte';
   import PaneHeader from '$lib/components/PaneHeader.svelte';
 
   interface Props {
@@ -123,32 +124,22 @@
     {/if}
   </div>
 
-  {#if onAction}
+  {#if onAction && agentActionsStore.actions.length > 0}
     <div class="flex gap-2 border-t border-border px-3 py-2">
-      <button
-        class={[
-          'flex-1 rounded border border-border px-3 py-1.5 text-sm font-medium transition-colors',
-          agentBusy
-            ? 'cursor-not-allowed text-text-faint'
-            : 'cursor-pointer text-text-muted hover:bg-surface-alt hover:text-text'
-        ]}
-        disabled={agentBusy}
-        onclick={() => onAction('Create a commit')}
-      >
-        Commit
-      </button>
-      <button
-        class={[
-          'flex-1 rounded border border-border px-3 py-1.5 text-sm font-medium transition-colors',
-          agentBusy
-            ? 'cursor-not-allowed text-text-faint'
-            : 'cursor-pointer text-text-muted hover:bg-surface-alt hover:text-text'
-        ]}
-        disabled={agentBusy}
-        onclick={() => onAction('Ask a subagent for a thorough code review')}
-      >
-        Review
-      </button>
+      {#each agentActionsStore.actions as action (action.label)}
+        <button
+          class={[
+            'flex-1 rounded border border-border px-3 py-1.5 text-sm font-medium transition-colors',
+            agentBusy
+              ? 'cursor-not-allowed text-text-faint'
+              : 'cursor-pointer text-text-muted hover:bg-surface-alt hover:text-text'
+          ]}
+          disabled={agentBusy}
+          onclick={() => onAction(action.prompt)}
+        >
+          {action.label}
+        </button>
+      {/each}
     </div>
   {/if}
 </div>

@@ -7,6 +7,7 @@
   import { beansStore } from '$lib/beans.svelte';
   import { worktreeStore } from '$lib/worktrees.svelte';
   import { agentStatusesStore } from '$lib/agentStatuses.svelte';
+  import { agentActionsStore } from '$lib/agentActions.svelte';
   import { ui } from '$lib/uiState.svelte';
   import BeanForm from '$lib/components/BeanForm.svelte';
   import Sidebar from '$lib/components/Sidebar.svelte';
@@ -41,6 +42,7 @@
     beansStore.subscribe();
     worktreeStore.subscribe();
     agentStatusesStore.subscribe();
+    agentActionsStore.fetch();
   });
 
   onDestroy(() => {
