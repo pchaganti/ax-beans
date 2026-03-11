@@ -1,27 +1,81 @@
 <script lang="ts">
-  import { onMount, onDestroy, setContext } from 'svelte';
+  import { gql } from 'urql';
+  import { onMount, onDestroy } from 'svelte';
   import { changesStore } from '$lib/changes.svelte';
   import { ui } from '$lib/uiState.svelte';
-  import type { ActionContext } from '$lib/actionContext';
+  import { client } from '$lib/graphqlClient';
   import PaneHeader from '$lib/components/PaneHeader.svelte';
-  import ActionButton from '$lib/components/ActionButton.svelte';
+
+  interface AgentAction {
+    id: string;
+    label: string;
+    description: string | null;
+  }
 
   interface Props {
     path?: string;
-    onAction?: (message: string) => void;
+    beanId?: string;
     agentBusy?: boolean;
   }
 
-  let { path, onAction, agentBusy = false }: Props = $props();
+  let { path, beanId, agentBusy = false }: Props = $props();
 
-  if (onAction) {
-    setContext<ActionContext>('action', {
-      onAction,
-      get disabled() {
-        return agentBusy;
+  const AGENT_ACTIONS_QUERY = gql`
+    query AgentActions($beanId: ID!) {
+      agentActions(beanId: $beanId) {
+        id
+        label
+        description
       }
-    });
+    }
+  `;
+
+  const EXECUTE_AGENT_ACTION = gql`
+    mutation ExecuteAgentAction($beanId: ID!, $actionId: ID!) {
+      executeAgentAction(beanId: $beanId, actionId: $actionId)
+    }
+  `;
+
+  let actions = $state<AgentAction[]>([]);
+  let executingAction = $state<string | null>(null);
+
+  async function fetchActions() {
+    if (!beanId) return;
+    const result = await client.query(AGENT_ACTIONS_QUERY, { beanId }).toPromise();
+    if (result.error) {
+      console.error('Failed to fetch agent actions:', result.error);
+      return;
+    }
+    if (result.data?.agentActions) {
+      actions = result.data.agentActions;
+    }
   }
+
+  async function executeAction(actionId: string) {
+    if (!beanId || agentBusy) return;
+    executingAction = actionId;
+    try {
+      await client.mutation(EXECUTE_AGENT_ACTION, { beanId, actionId }).toPromise();
+    } finally {
+      executingAction = null;
+    }
+  }
+
+  // Re-fetch actions when beanId changes
+  $effect(() => {
+    if (beanId) {
+      fetchActions();
+    }
+  });
+
+  // Re-fetch actions when agent transitions to idle
+  let wasAgentBusy = $state(false);
+  $effect(() => {
+    if (wasAgentBusy && !agentBusy) {
+      fetchActions();
+    }
+    wasAgentBusy = agentBusy;
+  });
 
   const stagedChanges = $derived(changesStore.changes.filter((c) => c.staged));
   const unstagedChanges = $derived(changesStore.changes.filter((c) => !c.staged));
@@ -134,17 +188,23 @@
     {/if}
   </div>
 
-  {#if onAction}
+  {#if beanId && actions.length > 0}
     <div class="flex gap-2 border-t border-border px-3 py-2">
-      <ActionButton
-        prompt="Create a commit. If you have just implemented a change, make sure there is an associated bean, it is up to date, and possibly even marked as completed if you are done with the change. Then only commit changes related to that change. If you haven't, please examine the git diff and commit whatever changes you see."
-      >
-        Commit
-      </ActionButton>
-
-      <ActionButton prompt="Ask a subagent for a thorough code review.">
-        Review
-      </ActionButton>
+      {#each actions as action (action.id)}
+        <button
+          class={[
+            'flex-1 rounded border border-border px-3 py-1.5 text-sm font-medium transition-colors',
+            agentBusy || executingAction
+              ? 'cursor-not-allowed text-text-faint'
+              : 'cursor-pointer text-text-muted hover:bg-surface-alt hover:text-text'
+          ]}
+          disabled={agentBusy || !!executingAction}
+          title={action.description ?? undefined}
+          onclick={() => executeAction(action.id)}
+        >
+          {action.label}
+        </button>
+      {/each}
     </div>
   {/if}
 </div>

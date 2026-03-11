@@ -8,10 +8,11 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hmans/beans/internal/agent"
+	"github.com/hmans/beans/internal/graph/model"
 	"github.com/hmans/beans/pkg/bean"
 	"github.com/hmans/beans/pkg/beancore"
 	"github.com/hmans/beans/pkg/config"
-	"github.com/hmans/beans/internal/graph/model"
 )
 
 func setupTestResolver(t *testing.T) (*Resolver, *beancore.Core) {
@@ -2837,6 +2838,179 @@ func TestAddBlockingWithETag(t *testing.T) {
 			t.Errorf("Expected ETagMismatchError, got %T: %v", err, err)
 		}
 	})
+}
+
+func TestQueryAgentActions(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("returns always-visible actions for unknown bean", func(t *testing.T) {
+		resolver, _ := setupTestResolver(t)
+		qr := resolver.Query()
+		actions, err := qr.AgentActions(ctx, "any-bean-id")
+		if err != nil {
+			t.Fatalf("AgentActions() error = %v", err)
+		}
+		// start-work is hidden (no worktree), so only commit + review
+		if len(actions) != 2 {
+			t.Fatalf("AgentActions() count = %d, want 2", len(actions))
+		}
+		if actions[0].ID != "commit" {
+			t.Errorf("actions[0].ID = %q, want %q", actions[0].ID, "commit")
+		}
+		if actions[1].ID != "review" {
+			t.Errorf("actions[1].ID = %q, want %q", actions[1].ID, "review")
+		}
+	})
+}
+
+func TestStartWorkActionVisibility(t *testing.T) {
+	startWork := findAgentAction("start-work")
+	if startWork == nil {
+		t.Fatal("start-work action not found")
+	}
+
+	tests := []struct {
+		name    string
+		ctx     actionContext
+		visible bool
+	}{
+		{"hidden without worktree", actionContext{InWorktree: false, BeanStatus: "todo"}, false},
+		{"hidden when in-progress", actionContext{InWorktree: true, BeanStatus: "in-progress"}, false},
+		{"visible when todo with worktree", actionContext{InWorktree: true, BeanStatus: "todo"}, true},
+		{"visible when draft with worktree", actionContext{InWorktree: true, BeanStatus: "draft"}, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := startWork.Visible(tt.ctx)
+			if got != tt.visible {
+				t.Errorf("Visible() = %v, want %v", got, tt.visible)
+			}
+		})
+	}
+}
+
+func TestExecuteAgentAction(t *testing.T) {
+	t.Run("nil agent manager", func(t *testing.T) {
+		resolver, _ := setupTestResolver(t)
+		mr := &mutationResolver{resolver}
+
+		_, err := mr.ExecuteAgentAction(context.Background(), "__central__", "commit")
+		if err == nil {
+			t.Fatal("expected error when AgentMgr is nil")
+		}
+		if err.Error() != "agent manager not available" {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("unknown action", func(t *testing.T) {
+		resolver, _ := setupTestResolver(t)
+		resolver.AgentMgr = agent.NewManager("", nil)
+		resolver.ProjectRoot = t.TempDir()
+		mr := &mutationResolver{resolver}
+
+		_, err := mr.ExecuteAgentAction(context.Background(), "__central__", "nonexistent")
+		if err == nil {
+			t.Fatal("expected error for unknown action")
+		}
+		if err.Error() != "unknown agent action: nonexistent" {
+			t.Fatalf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("commit action", func(t *testing.T) {
+		resolver, _ := setupTestResolver(t)
+		resolver.AgentMgr = agent.NewManager("", nil)
+		resolver.ProjectRoot = t.TempDir()
+		mr := &mutationResolver{resolver}
+
+		result, err := mr.ExecuteAgentAction(context.Background(), CentralSessionID, "commit")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !result {
+			t.Fatal("expected true result")
+		}
+
+		session := resolver.AgentMgr.GetSession(CentralSessionID)
+		if session == nil {
+			t.Fatal("expected session to exist")
+		}
+		if len(session.Messages) == 0 {
+			t.Fatal("expected at least one message")
+		}
+		lastMsg := session.Messages[len(session.Messages)-1]
+		if lastMsg.Role != agent.RoleUser {
+			t.Fatalf("expected user role, got %s", lastMsg.Role)
+		}
+		commitAction := findAgentAction("commit")
+		if lastMsg.Content != commitAction.PromptFunc(CentralSessionID) {
+			t.Fatalf("expected commit prompt, got: %s", lastMsg.Content)
+		}
+	})
+
+	t.Run("review action", func(t *testing.T) {
+		resolver, _ := setupTestResolver(t)
+		resolver.AgentMgr = agent.NewManager("", nil)
+		resolver.ProjectRoot = t.TempDir()
+		mr := &mutationResolver{resolver}
+
+		result, err := mr.ExecuteAgentAction(context.Background(), CentralSessionID, "review")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !result {
+			t.Fatal("expected true result")
+		}
+
+		session := resolver.AgentMgr.GetSession(CentralSessionID)
+		if session == nil {
+			t.Fatal("expected session to exist")
+		}
+		lastMsg := session.Messages[len(session.Messages)-1]
+		reviewAction := findAgentAction("review")
+		if lastMsg.Content != reviewAction.PromptFunc(CentralSessionID) {
+			t.Fatalf("expected review prompt, got: %s", lastMsg.Content)
+		}
+	})
+
+	t.Run("non-central without worktree", func(t *testing.T) {
+		resolver, _ := setupTestResolver(t)
+		resolver.AgentMgr = agent.NewManager("", nil)
+		mr := &mutationResolver{resolver}
+
+		_, err := mr.ExecuteAgentAction(context.Background(), "some-bean", "commit")
+		if err == nil {
+			t.Fatal("expected error for non-central bean without worktree")
+		}
+	})
+}
+
+func TestAgentActionRegistry(t *testing.T) {
+	expectedActions := []string{"start-work", "commit", "review"}
+	for _, id := range expectedActions {
+		action := findAgentAction(id)
+		if action == nil {
+			t.Errorf("missing expected action: %s", id)
+			continue
+		}
+		if action.Label == "" {
+			t.Errorf("empty label for action: %s", id)
+		}
+		if action.Description == "" {
+			t.Errorf("empty description for action: %s", id)
+		}
+		if action.PromptFunc == nil {
+			t.Errorf("nil PromptFunc for action: %s", id)
+		} else if action.PromptFunc("test-bean") == "" {
+			t.Errorf("empty prompt for action: %s", id)
+		}
+	}
+
+	if findAgentAction("nonexistent") != nil {
+		t.Error("expected nil for unknown action")
+	}
 }
 
 func TestRemoveBlockingWithETag(t *testing.T) {

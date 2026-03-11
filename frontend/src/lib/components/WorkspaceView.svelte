@@ -68,8 +68,8 @@
         {#snippet children()}
           <ChangesPane
             path={worktreePath}
+            beanId={bean.id}
             {agentBusy}
-            onAction={(msg) => agentStore.sendMessage(bean.id, msg)}
           />
         {/snippet}
         {#snippet aside()}

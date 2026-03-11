@@ -518,8 +518,7 @@ func (r *mutationResolver) StartWork(ctx context.Context, beanID string) (*model
 	normalizedID, _ := r.Core.NormalizeID(beanID)
 
 	// Verify the bean exists
-	b, err := r.Core.Get(normalizedID)
-	if err != nil {
+	if _, err := r.Core.Get(normalizedID); err != nil {
 		return nil, fmt.Errorf("bean not found: %s", beanID)
 	}
 
@@ -527,15 +526,6 @@ func (r *mutationResolver) StartWork(ctx context.Context, beanID string) (*model
 	wt, err := r.WorktreeMgr.Create(normalizedID)
 	if err != nil {
 		return nil, err
-	}
-
-	// Set bean status to in-progress (runtime-only — the worktree agent will
-	// write the updated bean to its own .beans/ dir, and the watcher will pick it up)
-	if b.Status != "in-progress" {
-		b.Status = "in-progress"
-		if err := r.Core.Update(b, nil, beancore.WithPersist(false)); err != nil {
-			return nil, fmt.Errorf("worktree created but failed to update bean status: %w", err)
-		}
 	}
 
 	// Start watching the worktree's .beans/ directory for bean changes
@@ -688,6 +678,34 @@ func (r *mutationResolver) SaveBean(ctx context.Context, id string) (bool, error
 	return true, nil
 }
 
+// ExecuteAgentAction is the resolver for the executeAgentAction field.
+func (r *mutationResolver) ExecuteAgentAction(ctx context.Context, beanID string, actionID string) (bool, error) {
+	if r.AgentMgr == nil {
+		return false, fmt.Errorf("agent manager not available")
+	}
+
+	action := findAgentAction(actionID)
+	if action == nil {
+		return false, fmt.Errorf("unknown agent action: %s", actionID)
+	}
+
+	var workDir string
+	if beanID == CentralSessionID {
+		workDir = r.ProjectRoot
+	} else {
+		var err error
+		workDir, err = r.findWorktreePath(beanID)
+		if err != nil {
+			return false, err
+		}
+	}
+
+	if err := r.AgentMgr.SendMessage(beanID, workDir, action.PromptFunc(beanID)); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // Bean is the resolver for the bean field.
 func (r *queryResolver) Bean(ctx context.Context, id string) (*bean.Bean, error) {
 	b, err := r.Core.Get(id)
@@ -800,6 +818,43 @@ func (r *queryResolver) FileChanges(ctx context.Context, path *string) ([]*model
 // HasDirtyBeans is the resolver for the hasDirtyBeans field.
 func (r *queryResolver) HasDirtyBeans(ctx context.Context) (bool, error) {
 	return r.Core.HasDirty(), nil
+}
+
+// AgentActions is the resolver for the agentActions field.
+func (r *queryResolver) AgentActions(ctx context.Context, beanID string) ([]*model.AgentAction, error) {
+	// Build action context for visibility filtering
+	actCtx := actionContext{BeanID: beanID}
+
+	// Check if this bean has a worktree
+	if r.WorktreeMgr != nil {
+		if wts, err := r.WorktreeMgr.List(); err == nil {
+			for _, wt := range wts {
+				if wt.BeanID == beanID {
+					actCtx.InWorktree = true
+					break
+				}
+			}
+		}
+	}
+
+	// Look up bean status
+	if b, err := r.Core.Get(beanID); err == nil {
+		actCtx.BeanStatus = b.Status
+	}
+
+	var result []*model.AgentAction
+	for _, a := range agentActions {
+		if a.Visible != nil && !a.Visible(actCtx) {
+			continue
+		}
+		desc := a.Description
+		result = append(result, &model.AgentAction{
+			ID:          a.ID,
+			Label:       a.Label,
+			Description: &desc,
+		})
+	}
+	return result, nil
 }
 
 // BeanChanged is the resolver for the beanChanged field.

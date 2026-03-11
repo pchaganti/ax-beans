@@ -32,6 +32,11 @@ type Query {
   Whether any beans have unsaved runtime changes
   """
   hasDirtyBeans: Boolean!
+
+  """
+  Get available agent actions for a bean
+  """
+  agentActions(beanId: ID!): [AgentAction!]!
 }
 
 type Subscription {
@@ -200,6 +205,12 @@ type Mutation {
   Save a specific bean to disk (must be dirty). Returns true if saved.
   """
   saveBean(id: ID!): Boolean!
+
+  """
+  Execute a predefined agent action (e.g., "commit", "review") by injecting
+  the corresponding prompt into the agent conversation.
+  """
+  executeAgentAction(beanId: ID!, actionId: ID!): Boolean!
 }
 
 """
@@ -561,4 +572,16 @@ enum AgentMessageRole {
   USER
   ASSISTANT
   TOOL
+}
+
+"""
+An action that can be performed by the agent
+"""
+type AgentAction {
+  "Unique identifier for the action"
+  id: ID!
+  "Human-readable label"
+  label: String!
+  "Description of what the action does"
+  description: String
 }

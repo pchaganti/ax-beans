@@ -142,8 +142,8 @@
           <SplitPane direction="horizontal" side="end" persistKey="changes-chat-split" initialSize={420}>
             {#snippet children()}
               <ChangesPane
+                beanId={CENTRAL_SESSION_ID}
                 {agentBusy}
-                onAction={(msg) => agentStore.sendMessage(CENTRAL_SESSION_ID, msg)}
               />
             {/snippet}
             {#snippet aside()}
@@ -164,8 +164,8 @@
           </div>
         {:else if ui.showChanges}
           <ChangesPane
+            beanId={CENTRAL_SESSION_ID}
             {agentBusy}
-            onAction={(msg) => agentStore.sendMessage(CENTRAL_SESSION_ID, msg)}
           />
         {/if}
       {/snippet}

@@ -19,6 +19,16 @@ type ActiveAgentStatus struct {
 	Status AgentSessionStatus `json:"status"`
 }
 
+// An action that can be performed by the agent
+type AgentAction struct {
+	// Unique identifier for the action
+	ID string `json:"id"`
+	// Human-readable label
+	Label string `json:"label"`
+	// Description of what the action does
+	Description *string `json:"description,omitempty"`
+}
+
 // A single message in an agent conversation
 type AgentMessage struct {
 	// Message role

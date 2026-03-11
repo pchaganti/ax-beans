@@ -128,6 +128,65 @@ func activeAgentsToModel(agents []agent.ActiveAgent) []*model.ActiveAgentStatus 
 	return result
 }
 
+// actionContext provides context about the bean for action visibility filtering.
+type actionContext struct {
+	BeanID      string
+	BeanStatus  string
+	InWorktree  bool
+}
+
+// agentActionDef defines a single agent action with its metadata and prompt.
+type agentActionDef struct {
+	ID          string
+	Label       string
+	Description string
+	// PromptFunc generates the prompt, receiving the bean ID for interpolation.
+	PromptFunc  func(beanID string) string
+	// Visible determines whether this action should appear. If nil, always visible.
+	Visible     func(ctx actionContext) bool
+}
+
+// agentActions is the single registry of all available agent actions.
+var agentActions = []agentActionDef{
+	{
+		ID:          "start-work",
+		Label:       "Start Work",
+		Description: "Mark the bean as in-progress and start implementing it",
+		PromptFunc:  func(beanID string) string {
+			return fmt.Sprintf("Mark the bean %s as in-progress and start implementing it.", beanID)
+		},
+		Visible: func(ctx actionContext) bool {
+			return ctx.InWorktree && ctx.BeanStatus != "in-progress"
+		},
+	},
+	{
+		ID:          "commit",
+		Label:       "Commit",
+		Description: "Create a git commit",
+		PromptFunc:  func(_ string) string {
+			return "Create a commit. If you have just implemented a change, make sure there is an associated bean, it is up to date, and possibly even marked as completed if you are done with the change. Then only commit changes related to that change. If you haven't, please examine the git diff and commit whatever changes you see."
+		},
+	},
+	{
+		ID:          "review",
+		Label:       "Review",
+		Description: "Ask for a code review",
+		PromptFunc:  func(_ string) string {
+			return "Ask a subagent for a thorough code review."
+		},
+	},
+}
+
+// findAgentAction looks up an action by ID, returning nil if not found.
+func findAgentAction(id string) *agentActionDef {
+	for i := range agentActions {
+		if agentActions[i].ID == id {
+			return &agentActions[i]
+		}
+	}
+	return nil
+}
+
 // findWorktreePath looks up the worktree filesystem path for a bean.
 func (r *Resolver) findWorktreePath(beanID string) (string, error) {
 	if r.WorktreeMgr == nil {
