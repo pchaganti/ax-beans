@@ -279,7 +279,7 @@
         {#if pendingInteraction.type === 'EXIT_PLAN'}
           <button
             onclick={approveInteractionWithAct}
-            class="cursor-pointer rounded bg-danger px-3 py-1 font-mono text-xs text-white transition-colors hover:opacity-90"
+            class="cursor-pointer rounded bg-success px-3 py-1 font-mono text-xs text-white transition-colors hover:opacity-90"
           >
             Approve + Act
           </button>
@@ -375,7 +375,7 @@
           class={[
             'btn-tab-sm rounded-r border-l-0',
             agentMode === 'act'
-              ? 'border-danger/30 bg-danger/10 text-danger'
+              ? 'border-success/30 bg-success/10 text-success'
               : 'btn-tab-sm-inactive'
           ]}
         >
