@@ -6,6 +6,46 @@ import (
 	"time"
 )
 
+func TestRingBufferBasic(t *testing.T) {
+	rb := NewRingBuffer(8)
+
+	rb.Write([]byte("hello"))
+	got := string(rb.Bytes())
+	if got != "hello" {
+		t.Fatalf("expected %q, got %q", "hello", got)
+	}
+}
+
+func TestRingBufferWrap(t *testing.T) {
+	rb := NewRingBuffer(8)
+
+	rb.Write([]byte("abcdefgh"))  // fills exactly
+	rb.Write([]byte("ij"))        // wraps: should be "cdefghij"
+
+	got := string(rb.Bytes())
+	if got != "cdefghij" {
+		t.Fatalf("expected %q, got %q", "cdefghij", got)
+	}
+}
+
+func TestRingBufferOverflow(t *testing.T) {
+	rb := NewRingBuffer(4)
+
+	// Write more than capacity in a single call
+	rb.Write([]byte("abcdefgh"))
+	got := string(rb.Bytes())
+	if got != "efgh" {
+		t.Fatalf("expected %q, got %q", "efgh", got)
+	}
+}
+
+func TestRingBufferEmpty(t *testing.T) {
+	rb := NewRingBuffer(8)
+	if rb.Bytes() != nil {
+		t.Fatal("expected nil for empty buffer")
+	}
+}
+
 func TestManagerCreateAndClose(t *testing.T) {
 	mgr := NewManager()
 	defer mgr.Shutdown()
@@ -70,7 +110,7 @@ func TestSessionResize(t *testing.T) {
 	}
 }
 
-func TestSessionWriteAndRead(t *testing.T) {
+func TestSessionWriteAndAttach(t *testing.T) {
 	mgr := NewManager()
 	defer mgr.Shutdown()
 
@@ -79,31 +119,134 @@ func TestSessionWriteAndRead(t *testing.T) {
 		t.Fatalf("Create failed: %v", err)
 	}
 
+	// Attach to receive output
+	_, output := sess.Attach()
+
 	// Write a command to the PTY
 	_, err = sess.Write([]byte("echo hello\n"))
 	if err != nil {
 		t.Fatalf("Write failed: %v", err)
 	}
 
-	// Read some output (should get something back within a reasonable time)
-	buf := make([]byte, 4096)
-	done := make(chan bool)
-	go func() {
-		n, err := sess.Read(buf)
-		if err != nil {
-			t.Errorf("Read failed: %v", err)
-		}
-		if n == 0 {
-			t.Error("Read returned 0 bytes")
-		}
-		done <- true
-	}()
-
+	// Read output via the attached channel
 	select {
-	case <-done:
-		// success
+	case data := <-output:
+		if len(data) == 0 {
+			t.Error("received empty data")
+		}
 	case <-time.After(5 * time.Second):
-		t.Fatal("Read timed out")
+		t.Fatal("timed out waiting for output")
+	}
+}
+
+func TestSessionScrollback(t *testing.T) {
+	mgr := NewManager()
+	defer mgr.Shutdown()
+
+	sess, err := mgr.Create("test-scrollback", os.TempDir(), 80, 24)
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	// Write a command and wait for output
+	_, output := sess.Attach()
+	_, _ = sess.Write([]byte("echo scrollback-test\n"))
+
+	// Wait for some output
+	select {
+	case <-output:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for output")
+	}
+
+	// Detach and reattach — scrollback should contain the output
+	sess.Detach(output)
+	scrollback, _ := sess.Attach()
+
+	if len(scrollback) == 0 {
+		t.Fatal("expected non-empty scrollback after reattach")
+	}
+}
+
+func TestGetOrCreateReusesAliveSession(t *testing.T) {
+	mgr := NewManager()
+	defer mgr.Shutdown()
+
+	sess1, reconnected, err := mgr.GetOrCreate("test-reuse", os.TempDir(), 80, 24)
+	if err != nil {
+		t.Fatalf("first GetOrCreate failed: %v", err)
+	}
+	if reconnected {
+		t.Fatal("first call should not be a reconnection")
+	}
+
+	sess2, reconnected, err := mgr.GetOrCreate("test-reuse", os.TempDir(), 80, 24)
+	if err != nil {
+		t.Fatalf("second GetOrCreate failed: %v", err)
+	}
+	if !reconnected {
+		t.Fatal("second call should be a reconnection")
+	}
+	if sess1 != sess2 {
+		t.Fatal("expected same session object on reconnection")
+	}
+}
+
+func TestGetOrCreateReplacesDeadSession(t *testing.T) {
+	mgr := NewManager()
+	defer mgr.Shutdown()
+
+	sess1, _, err := mgr.GetOrCreate("test-dead", os.TempDir(), 80, 24)
+	if err != nil {
+		t.Fatalf("first GetOrCreate failed: %v", err)
+	}
+
+	// Kill the shell process to simulate death
+	sess1.Close()
+
+	// Wait for done channel to close
+	select {
+	case <-sess1.Done():
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for session to die")
+	}
+
+	sess2, reconnected, err := mgr.GetOrCreate("test-dead", os.TempDir(), 80, 24)
+	if err != nil {
+		t.Fatalf("second GetOrCreate failed: %v", err)
+	}
+	if reconnected {
+		t.Fatal("should not reconnect to dead session")
+	}
+	if sess1 == sess2 {
+		t.Fatal("expected different session after dead replacement")
+	}
+}
+
+func TestSessionAlive(t *testing.T) {
+	mgr := NewManager()
+	defer mgr.Shutdown()
+
+	sess, err := mgr.Create("test-alive", os.TempDir(), 80, 24)
+	if err != nil {
+		t.Fatalf("Create failed: %v", err)
+	}
+
+	if !sess.Alive() {
+		t.Fatal("new session should be alive")
+	}
+
+	sess.Close()
+
+	// Wait for done
+	select {
+	case <-sess.Done():
+	case <-time.After(2 * time.Second):
+		t.Fatal("timed out waiting for done")
+	}
+
+	if sess.Alive() {
+		t.Fatal("closed session should not be alive")
 	}
 }
 

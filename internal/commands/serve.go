@@ -152,6 +152,7 @@ func runServer(port int, origins []string) error {
 			Core:        core,
 			WorktreeMgr: wtManager,
 			AgentMgr:    agentMgr,
+			TerminalMgr: termMgr,
 			ProjectRoot: filepath.Dir(core.Root()),
 		},
 	})

@@ -17,6 +17,7 @@
   let fitAddon: FitAddon | undefined;
   let ws: WebSocket | undefined;
   let resizeObserver: ResizeObserver | undefined;
+  let reconnectTimeout: ReturnType<typeof setTimeout> | undefined;
 
   function connect(term: Terminal) {
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -41,8 +42,17 @@
       }
     });
 
-    socket.addEventListener('close', () => {
-      term.write('\r\n\x1b[90m[session ended]\x1b[0m\r\n');
+    socket.addEventListener('close', (e) => {
+      if (e.code === 1000 && e.reason === 'shell exited') {
+        term.write('\r\n\x1b[90m[session ended]\x1b[0m\r\n');
+      } else {
+        // Connection lost — reset terminal and reconnect
+        // The server will replay scrollback to restore the display
+        reconnectTimeout = setTimeout(() => {
+          term.reset();
+          connect(term);
+        }, 500);
+      }
     });
   }
 
@@ -112,6 +122,7 @@
   });
 
   onDestroy(() => {
+    if (reconnectTimeout) clearTimeout(reconnectTimeout);
     resizeObserver?.disconnect();
     ws?.close();
     terminal?.dispose();

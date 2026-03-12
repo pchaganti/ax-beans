@@ -3,7 +3,6 @@ package commands
 import (
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -34,6 +33,8 @@ type terminalResizeMsg struct {
 }
 
 // handleTerminalWS upgrades an HTTP connection to a WebSocket and bridges it to a PTY session.
+// Sessions persist across WebSocket reconnections — the PTY stays alive when the client disconnects,
+// and scrollback is replayed when a new client attaches.
 func handleTerminalWS(c *gin.Context, termMgr *terminal.Manager, wtMgr *worktree.Manager, upgrader websocket.Upgrader, projectRoot string) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -62,7 +63,7 @@ func handleTerminalWS(c *gin.Context, termMgr *terminal.Manager, wtMgr *worktree
 		return
 	}
 
-	// Create PTY session
+	// Get existing session or create new one
 	cols, rows := initMsg.Cols, initMsg.Rows
 	if cols == 0 {
 		cols = 80
@@ -71,34 +72,50 @@ func handleTerminalWS(c *gin.Context, termMgr *terminal.Manager, wtMgr *worktree
 		rows = 24
 	}
 
-	sess, err := termMgr.Create(initMsg.SessionID, workDir, cols, rows)
+	sess, reconnected, err := termMgr.GetOrCreate(initMsg.SessionID, workDir, cols, rows)
 	if err != nil {
 		_ = conn.WriteMessage(websocket.CloseMessage,
 			websocket.FormatCloseMessage(websocket.CloseInternalServerErr, "failed to create PTY"))
 		return
 	}
 
-	// When this handler exits, clean up the session
-	defer termMgr.Close(initMsg.SessionID)
+	// Attach to session — get scrollback and live output channel
+	scrollback, output := sess.Attach()
+	defer sess.Detach(output)
 
-	// PTY → WebSocket (binary frames)
-	done := make(chan struct{})
+	// Replay scrollback for reconnecting clients
+	if reconnected && len(scrollback) > 0 {
+		if err := conn.WriteMessage(websocket.BinaryMessage, scrollback); err != nil {
+			return
+		}
+	}
+
+	// Channel closed when the WebSocket read loop exits (client disconnected)
+	clientDone := make(chan struct{})
+
+	// PTY output → WebSocket (reads from the output channel populated by the session's readLoop)
+	ptyDone := make(chan struct{})
 	go func() {
-		defer close(done)
-		buf := make([]byte, 4096)
+		defer close(ptyDone)
 		for {
-			n, err := sess.Read(buf)
-			if n > 0 {
-				if writeErr := conn.WriteMessage(websocket.BinaryMessage, buf[:n]); writeErr != nil {
+			select {
+			case data := <-output:
+				if err := conn.WriteMessage(websocket.BinaryMessage, data); err != nil {
 					return
 				}
-			}
-			if err != nil {
-				if err != io.EOF {
-					// Shell exited — send close frame
-					_ = conn.WriteMessage(websocket.CloseMessage,
-						websocket.FormatCloseMessage(websocket.CloseNormalClosure, "shell exited"))
+			case <-sess.Done():
+				// Shell exited — drain any remaining buffered output
+				for {
+					select {
+					case data := <-output:
+						_ = conn.WriteMessage(websocket.BinaryMessage, data)
+					default:
+						_ = conn.WriteMessage(websocket.CloseMessage,
+							websocket.FormatCloseMessage(websocket.CloseNormalClosure, "shell exited"))
+						return
+					}
 				}
+			case <-clientDone:
 				return
 			}
 		}
@@ -106,11 +123,10 @@ func handleTerminalWS(c *gin.Context, termMgr *terminal.Manager, wtMgr *worktree
 
 	// WebSocket → PTY (JSON text frames)
 	go func() {
+		defer close(clientDone)
 		for {
 			_, raw, err := conn.ReadMessage()
 			if err != nil {
-				// Client disconnected
-				sess.Close()
 				return
 			}
 
@@ -136,8 +152,11 @@ func handleTerminalWS(c *gin.Context, termMgr *terminal.Manager, wtMgr *worktree
 		}
 	}()
 
-	// Wait for PTY to close
-	<-done
+	// Wait for either PTY exit or client disconnect
+	select {
+	case <-ptyDone:
+	case <-clientDone:
+	}
 }
 
 // resolveTerminalWorkDir maps a session ID to a filesystem path.

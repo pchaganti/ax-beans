@@ -548,6 +548,12 @@ func (r *mutationResolver) RemoveWorktree(ctx context.Context, id string) (bool,
 	if err := r.WorktreeMgr.Remove(id); err != nil {
 		return false, err
 	}
+
+	// Close any terminal session associated with this worktree
+	if r.TerminalMgr != nil {
+		r.TerminalMgr.Close(id)
+	}
+
 	return true, nil
 }
 
