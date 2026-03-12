@@ -220,16 +220,48 @@ func (m *Manager) readOutput(beanID string, stdout io.Reader, workDir string) {
 	var pendingToolPersist bool // true when current tool msg hasn't been persisted yet
 	var deferredAskUser bool // true when AskUserQuestion detected, waiting for input to complete
 
+	// Write tool diff tracking: capture old file content before the write happens.
+	var writeOldContent string
+	var writeOldCaptured bool
+
 	// Subagent activities are tracked via task_progress events and cleared on eventResult.
 
 	// flushToolMsg persists the current tool message to JSONL if one is pending.
 	// Called before persisting any other message or at end of stream.
+	// Also computes diffs for Write tool messages.
 	flushToolMsg := func() {
-		if !pendingToolPersist || m.store == nil {
-			pendingToolPersist = false
+		if !pendingToolPersist {
 			return
 		}
 		pendingToolPersist = false
+
+		// Compute diff for Write tool before persisting
+		if toolName == "Write" && writeOldCaptured {
+			if newContent := extractFileContent(toolInputBuf.String()); newContent != "" {
+				filePath := extractFilePath(toolInputBuf.String())
+				// Strip workDir prefix for display
+				label := filePath
+				if workDir != "" {
+					label = strings.TrimPrefix(label, workDir+"/")
+				}
+				diff := computeUnifiedDiff(writeOldContent, newContent, label)
+				if diff != "" {
+					m.mu.Lock()
+					if s, ok := m.sessions[beanID]; ok && toolMsgIdx >= 0 && toolMsgIdx < len(s.Messages) {
+						s.Messages[toolMsgIdx].Diff = diff
+					}
+					m.mu.Unlock()
+					m.notify(beanID)
+				}
+			}
+		}
+		// Reset write tracking state
+		writeOldContent = ""
+		writeOldCaptured = false
+
+		if m.store == nil {
+			return
+		}
 		m.mu.RLock()
 		s, ok := m.sessions[beanID]
 		var msg Message
@@ -388,6 +420,21 @@ func (m *Manager) readOutput(beanID string, stdout io.Reader, workDir string) {
 					}
 					m.mu.Unlock()
 					m.notify(beanID)
+				}
+
+				// Capture old file content for Write tool diffs.
+				// We read the file as soon as we can parse file_path from the
+				// (possibly incomplete) input JSON — at this point the tool
+				// hasn't executed yet, so the file is still in its pre-write state.
+				if toolName == "Write" && !writeOldCaptured {
+					if filePath := extractFilePath(toolInputBuf.String()); filePath != "" {
+						writeOldCaptured = true
+						data, err := os.ReadFile(filePath)
+						if err == nil {
+							writeOldContent = string(data)
+						}
+						// If file doesn't exist (new file), writeOldContent stays empty
+					}
 				}
 			}
 

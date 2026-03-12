@@ -11,6 +11,7 @@ export interface AgentMessage {
   role: 'USER' | 'ASSISTANT' | 'TOOL';
   content: string;
   images: AgentMessageImage[];
+  diff: string | null;
 }
 
 export type InteractionType = 'EXIT_PLAN' | 'ENTER_PLAN' | 'ASK_USER';
@@ -72,6 +73,7 @@ const AGENT_SESSION_SUBSCRIPTION = gql`
           url
           mediaType
         }
+        diff
       }
       error
       planMode

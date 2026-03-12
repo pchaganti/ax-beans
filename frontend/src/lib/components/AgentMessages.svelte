@@ -17,6 +17,24 @@
   let messagesEl: HTMLDivElement | undefined = $state();
   let renderedMessages = $state<Map<string, string>>(new Map());
   let stuckToBottom = $state(true);
+  let expandedDiffs = $state<Set<number>>(new Set());
+
+  function toggleDiff(index: number) {
+    const next = new Set(expandedDiffs);
+    if (next.has(index)) {
+      next.delete(index);
+    } else {
+      next.add(index);
+    }
+    expandedDiffs = next;
+  }
+
+  function diffLineClass(line: string): string {
+    if (line.startsWith('+') && !line.startsWith('+++')) return 'diff-add';
+    if (line.startsWith('-') && !line.startsWith('---')) return 'diff-del';
+    if (line.startsWith('@@')) return 'diff-hunk';
+    return '';
+  }
 
   function handleMessagesScroll() {
     if (!messagesEl) return;
@@ -111,9 +129,24 @@
             </div>
           </div>
         {:else if msg.role === 'TOOL'}
-          <div class="flex gap-2 text-xs text-text-faint">
-            <span class="shrink-0 select-none">&middot;</span>
-            <span>{msg.content}</span>
+          <div class="text-xs text-text-faint">
+            <div class="flex gap-2">
+              <span class="shrink-0 select-none">&middot;</span>
+              {#if msg.diff}
+                <button
+                  class="cursor-pointer text-left hover:text-text-muted"
+                  onclick={() => toggleDiff(i)}
+                >
+                  <span class="mr-1 inline-block w-2 select-none">{expandedDiffs.has(i) ? '▾' : '▸'}</span>{msg.content}
+                </button>
+              {:else}
+                <span>{msg.content}</span>
+              {/if}
+            </div>
+            {#if msg.diff && expandedDiffs.has(i)}
+              <pre class="mt-1 ml-5 max-h-64 overflow-auto rounded border border-border bg-surface-alt p-2 font-mono text-xs leading-relaxed">{#each msg.diff.split('\n') as line}<span class={diffLineClass(line)}>{line}
+</span>{/each}</pre>
+            {/if}
           </div>
         {:else if getRenderedContent(i)}
           <div class="flex gap-2">

@@ -592,6 +592,8 @@ type AgentMessage {
   content: String!
   "Attached images (empty for assistant/tool messages)"
   images: [AgentMessageImage!]!
+  "Unified diff output (only present on tool messages for Write/Edit tools)"
+  diff: String
 }
 
 """

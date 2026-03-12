@@ -380,3 +380,44 @@ func TestParseAskUserInput(t *testing.T) {
 		})
 	}
 }
+
+func TestExtractFilePath(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"valid file_path", `{"file_path":"/src/main.go","content":"..."}`, "/src/main.go"},
+		{"no file_path", `{"content":"..."}`, ""},
+		{"incomplete JSON", `{"file_path":"/sr`, ""},
+		{"empty object", `{}`, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := extractFilePath(tt.input)
+			if got != tt.want {
+				t.Errorf("extractFilePath() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestExtractFileContent(t *testing.T) {
+	tests := []struct {
+		name  string
+		input string
+		want  string
+	}{
+		{"valid content", `{"file_path":"/x.go","content":"hello\nworld"}`, "hello\nworld"},
+		{"no content", `{"file_path":"/x.go"}`, ""},
+		{"incomplete JSON", `{"content":"hel`, ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := extractFileContent(tt.input)
+			if got != tt.want {
+				t.Errorf("extractFileContent() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}

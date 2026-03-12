@@ -41,6 +41,7 @@ type entry struct {
 	Role      string       `json:"role,omitempty"`       // for messages: "user" or "assistant"
 	Content   string       `json:"content,omitempty"`    // for messages
 	Images    []entryImage `json:"images,omitempty"`     // for messages with attachments
+	Diff      string       `json:"diff,omitempty"`       // for tool messages: unified diff output
 	SessionID string       `json:"session_id,omitempty"` // for meta
 }
 
@@ -84,6 +85,7 @@ func (s *store) load(beanID string) ([]Message, string, error) {
 			msg := Message{
 				Role:    MessageRole(e.Role),
 				Content: e.Content,
+				Diff:    e.Diff,
 			}
 			for _, img := range e.Images {
 				msg.Images = append(msg.Images, ImageRef{ID: img.ID, MediaType: img.MediaType})
@@ -105,6 +107,7 @@ func (s *store) appendMessage(beanID string, msg Message) error {
 		Type:    "message",
 		Role:    string(msg.Role),
 		Content: msg.Content,
+		Diff:    msg.Diff,
 	}
 	for _, img := range msg.Images {
 		e.Images = append(e.Images, entryImage{ID: img.ID, MediaType: img.MediaType})

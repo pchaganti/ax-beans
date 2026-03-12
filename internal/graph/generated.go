@@ -64,6 +64,7 @@ type ComplexityRoot struct {
 
 	AgentMessage struct {
 		Content func(childComplexity int) int
+		Diff    func(childComplexity int) int
 		Images  func(childComplexity int) int
 		Role    func(childComplexity int) int
 	}
@@ -316,6 +317,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AgentMessage.Content(childComplexity), true
+	case "AgentMessage.diff":
+		if e.complexity.AgentMessage.Diff == nil {
+			break
+		}
+
+		return e.complexity.AgentMessage.Diff(childComplexity), true
 	case "AgentMessage.images":
 		if e.complexity.AgentMessage.Images == nil {
 			break
@@ -1984,6 +1991,35 @@ func (ec *executionContext) fieldContext_AgentMessage_images(_ context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _AgentMessage_diff(ctx context.Context, field graphql.CollectedField, obj *model.AgentMessage) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_AgentMessage_diff,
+		func(ctx context.Context) (any, error) {
+			return obj.Diff, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_AgentMessage_diff(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AgentMessage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _AgentMessageImage_url(ctx context.Context, field graphql.CollectedField, obj *model.AgentMessageImage) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -2159,6 +2195,8 @@ func (ec *executionContext) fieldContext_AgentSession_messages(_ context.Context
 				return ec.fieldContext_AgentMessage_content(ctx, field)
 			case "images":
 				return ec.fieldContext_AgentMessage_images(ctx, field)
+			case "diff":
+				return ec.fieldContext_AgentMessage_diff(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type AgentMessage", field.Name)
 		},
@@ -8249,6 +8287,8 @@ func (ec *executionContext) _AgentMessage(ctx context.Context, sel ast.Selection
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "diff":
+			out.Values[i] = ec._AgentMessage_diff(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

@@ -42,6 +42,7 @@ type Message struct {
 	Role    MessageRole
 	Content string
 	Images  []ImageRef // optional attached images (typically only on user messages)
+	Diff    string     // unified diff output (only on tool messages for Write/Edit)
 }
 
 // ToolInvocation records a tool call with its name and input summary.

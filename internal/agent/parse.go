@@ -260,6 +260,36 @@ func parseAskUserInput(inputJSON string) []AskUserQuestion {
 	return questions
 }
 
+// extractFilePath tries to extract the "file_path" field from accumulated
+// tool input JSON. Returns empty string if not found or JSON is incomplete.
+func extractFilePath(inputJSON string) string {
+	var obj map[string]interface{}
+	if err := json.Unmarshal([]byte(inputJSON), &obj); err != nil {
+		return ""
+	}
+	if v, ok := obj["file_path"]; ok {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
+// extractFileContent tries to extract the "content" field from accumulated
+// tool input JSON. Returns empty string if not found or JSON is incomplete.
+func extractFileContent(inputJSON string) string {
+	var obj map[string]interface{}
+	if err := json.Unmarshal([]byte(inputJSON), &obj); err != nil {
+		return ""
+	}
+	if v, ok := obj["content"]; ok {
+		if s, ok := v.(string); ok {
+			return s
+		}
+	}
+	return ""
+}
+
 // toolInputSummaryFields are the JSON fields to look for (in order) when
 // extracting a human-readable summary from tool input.
 var toolInputSummaryFields = []string{

@@ -37,6 +37,8 @@ type AgentMessage struct {
 	Content string `json:"content"`
 	// Attached images (empty for assistant/tool messages)
 	Images []*AgentMessageImage `json:"images"`
+	// Unified diff output (only present on tool messages for Write/Edit tools)
+	Diff *string `json:"diff,omitempty"`
 }
 
 // An image attached to an agent message

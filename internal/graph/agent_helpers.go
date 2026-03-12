@@ -29,10 +29,15 @@ func agentSessionToModel(s *agent.Session) *model.AgentSession {
 				MediaType: img.MediaType,
 			})
 		}
+		var diff *string
+		if m.Diff != "" {
+			diff = &m.Diff
+		}
 		msgs[i] = &model.AgentMessage{
 			Role:    role,
 			Content: m.Content,
 			Images:  images,
+			Diff:    diff,
 		}
 	}
 
