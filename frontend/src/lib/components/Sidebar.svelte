@@ -32,10 +32,11 @@
 
   async function handleRemoveWorktree(id: string) {
     confirmingRemoveId = null;
-    const ok = await worktreeStore.removeWorktree(id);
-    if (ok && ui.activeView === id) {
+    // Navigate away immediately since the store optimistically removes the item
+    if (ui.activeView === id) {
       ui.navigateTo('planning');
     }
+    await worktreeStore.removeWorktree(id);
   }
 </script>
 

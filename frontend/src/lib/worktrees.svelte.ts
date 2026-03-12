@@ -102,11 +102,18 @@ class WorktreeStore {
     this.loading = true;
     this.error = null;
 
+    // Eagerly remove from local state so the sidebar updates immediately
+    // without waiting for the subscription to deliver the new list.
+    const previous = this.worktrees;
+    this.worktrees = this.worktrees.filter((wt) => wt.id !== id);
+
     const result = await client.mutation(REMOVE_WORKTREE, { id }).toPromise();
 
     this.loading = false;
 
     if (result.error) {
+      // Restore on failure so the item reappears
+      this.worktrees = previous;
       this.error = result.error.message;
       return false;
     }
