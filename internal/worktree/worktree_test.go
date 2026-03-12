@@ -244,18 +244,23 @@ func TestRemoveStaleWorktree(t *testing.T) {
 		t.Fatalf("RemoveAll: %v", err)
 	}
 
-	// Remove should handle the stale entry gracefully via prune
-	if err := mgr.Remove(wt.ID); err != nil {
-		t.Fatalf("Remove (stale): %v", err)
+	// Remove should return an error for the stale worktree (no implicit prune)
+	if err := mgr.Remove(wt.ID); err == nil {
+		t.Fatal("expected error removing stale worktree, got nil")
 	}
+}
 
-	// List should be empty after pruning
-	wts, err := mgr.List()
-	if err != nil {
-		t.Fatalf("List: %v", err)
+func TestRemoveNonexistent(t *testing.T) {
+	repoDir, beansDir := initTestRepo(t)
+	mgr := NewManager(repoDir, beansDir, "")
+
+	// Remove a worktree that doesn't exist should return an error
+	err := mgr.Remove("wt-nonexistent")
+	if err == nil {
+		t.Fatal("expected error removing nonexistent worktree, got nil")
 	}
-	if len(wts) != 0 {
-		t.Fatalf("expected 0 worktrees after stale remove, got %d", len(wts))
+	if !strings.Contains(err.Error(), "not found") {
+		t.Errorf("expected 'not found' in error, got: %v", err)
 	}
 }
 

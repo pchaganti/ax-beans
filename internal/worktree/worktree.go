@@ -243,7 +243,6 @@ func (m *Manager) removeMeta(id string) {
 // Remove removes the worktree with the given ID.
 // The actual worktree path is looked up from git (not computed), so this works
 // even when the worktree was created from a different repo root/workspace.
-// If the worktree directory is already gone (stale entry), it prunes instead.
 func (m *Manager) Remove(id string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -252,39 +251,13 @@ func (m *Manager) Remove(id string) error {
 	// since the worktree may have been created from a different workspace.
 	worktreePath, err := m.findWorktreePathByID(id)
 	if err != nil {
-		// Worktree not found in active list — it may be stale (prunable).
-		log.Printf("[worktree] worktree %s not found in active list, pruning stale entries", id)
-		pruneCmd := exec.Command("git", "worktree", "prune")
-		pruneCmd.Dir = m.repoRoot
-		if pruneOut, pruneErr := pruneCmd.CombinedOutput(); pruneErr != nil {
-			log.Printf("[worktree] failed to prune worktrees: %s: %v", strings.TrimSpace(string(pruneOut)), pruneErr)
-			return fmt.Errorf("git worktree prune: %s: %w", strings.TrimSpace(string(pruneOut)), pruneErr)
-		}
-		log.Printf("[worktree] pruned stale worktree entries for %s", id)
-		m.notify()
-		return nil
+		return fmt.Errorf("worktree %s not found: %w", id, err)
 	}
 
 	cmd := exec.Command("git", "worktree", "remove", worktreePath)
 	cmd.Dir = m.repoRoot
 	if out, err := cmd.CombinedOutput(); err != nil {
 		outStr := strings.TrimSpace(string(out))
-
-		// If the directory is already gone, git worktree remove fails with
-		// "is not a working tree". Prune stale entries instead.
-		if strings.Contains(outStr, "is not a working tree") {
-			log.Printf("[worktree] worktree %s is stale, pruning", id)
-			pruneCmd := exec.Command("git", "worktree", "prune")
-			pruneCmd.Dir = m.repoRoot
-			if pruneOut, pruneErr := pruneCmd.CombinedOutput(); pruneErr != nil {
-				log.Printf("[worktree] failed to prune worktrees: %s: %v", strings.TrimSpace(string(pruneOut)), pruneErr)
-				return fmt.Errorf("git worktree prune: %s: %w", strings.TrimSpace(string(pruneOut)), pruneErr)
-			}
-			log.Printf("[worktree] pruned stale worktree for %s", id)
-			m.notify()
-			return nil
-		}
-
 		log.Printf("[worktree] failed to remove worktree %s at %s: %s: %v", id, worktreePath, outStr, err)
 		return fmt.Errorf("git worktree remove: %s: %w", outStr, err)
 	}
