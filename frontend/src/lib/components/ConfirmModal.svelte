@@ -41,14 +41,14 @@
     <p class="mb-5 text-sm text-text-muted">{message}</p>
     <div class="flex justify-end gap-2">
       <button
-        class="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-text-muted transition-colors hover:bg-surface-alt"
+        class="cursor-pointer rounded-md border border-border px-3 py-1.5 text-sm font-medium text-text-muted transition-colors hover:bg-surface-alt"
         onclick={onCancel}
       >
         {cancelLabel}
       </button>
       <button
         class={[
-          'rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+          'cursor-pointer rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
           danger
             ? 'bg-danger text-white hover:opacity-90'
             : 'bg-accent text-accent-text hover:opacity-90'

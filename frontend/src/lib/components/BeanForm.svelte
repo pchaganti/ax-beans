@@ -266,13 +266,13 @@
       <div class="flex justify-end gap-2 pt-2">
         <button
           type="button"
-          class="rounded-md border border-border px-4 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-surface-alt"
+          class="cursor-pointer rounded-md border border-border px-4 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-surface-alt"
           onclick={onClose}
           disabled={submitting}>Cancel</button
         >
         <button
           type="submit"
-          class="flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-text transition-opacity hover:opacity-90 disabled:opacity-50"
+          class="flex cursor-pointer items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-text transition-opacity hover:opacity-90 disabled:opacity-50"
           disabled={submitting || !title.trim()}
         >
           {#if submitting}

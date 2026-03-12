@@ -12,14 +12,9 @@
     'Liberation Mono', 'Courier New', monospace;
 }
 
-button,
 a,
 [role='button'] {
   cursor: pointer;
-}
-
-button:disabled {
-  cursor: not-allowed;
 }
 
 /* ── Toolbar & button utilities ──────────────── */
@@ -28,15 +23,15 @@ button:disabled {
 }
 
 .btn-primary {
-  @apply h-8 rounded-md bg-accent px-3 text-sm font-medium text-accent-text transition-opacity hover:opacity-90;
+  @apply h-8 cursor-pointer rounded-md bg-accent px-3 text-sm font-medium text-accent-text transition-opacity hover:opacity-90;
 }
 
 .btn-icon {
-  @apply flex h-6 w-6 items-center justify-center rounded text-text-muted transition-colors hover:bg-surface-alt hover:text-text;
+  @apply flex h-6 w-6 cursor-pointer items-center justify-center rounded text-text-muted transition-colors hover:bg-surface-alt hover:text-text;
 }
 
 .btn-tab {
-  @apply h-8 border px-3 py-1 text-sm font-medium transition-colors;
+  @apply h-8 cursor-pointer border px-3 py-1 text-sm font-medium transition-colors;
 }
 
 .btn-toggle {
@@ -58,7 +53,7 @@ button:disabled {
 }
 
 .btn-tab-sm {
-  @apply inline-flex h-6 items-center gap-1 border px-2 text-xs font-medium transition-colors;
+  @apply inline-flex h-6 cursor-pointer items-center gap-1 border px-2 text-xs font-medium transition-colors;
 }
 
 .btn-tab-sm-inactive {

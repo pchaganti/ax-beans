@@ -93,7 +93,7 @@
       </span>
       {#if isArchivable}
         <button
-          class="ml-auto icon-[uil--archive] size-3.5 text-text-faint transition-colors hover:text-text-muted disabled:opacity-50"
+          class="ml-auto cursor-pointer icon-[uil--archive] size-3.5 text-text-faint transition-colors hover:text-text-muted disabled:opacity-50"
           title="Archive"
           onclick={handleArchive}
           disabled={archiving}
@@ -120,7 +120,7 @@
       </span>
       {#if isArchivable}
         <button
-          class="icon-[uil--archive] size-3.5 shrink-0 text-text-faint transition-colors hover:text-text-muted disabled:opacity-50"
+          class="cursor-pointer icon-[uil--archive] size-3.5 shrink-0 text-text-faint transition-colors hover:text-text-muted disabled:opacity-50"
           title="Archive"
           onclick={handleArchive}
           disabled={archiving}

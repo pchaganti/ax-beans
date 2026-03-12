@@ -69,19 +69,17 @@
       </div>
     </div>
   {:else}
+    {#snippet sidebarPanel()}
+      <Sidebar />
+    {/snippet}
+
     <SplitPane
       direction="horizontal"
-      side="start"
-      initialSize={224}
-      minSize={150}
-      maxSize={400}
-      persistKey="sidebar"
-    >
-      {#snippet aside()}
-        <Sidebar />
-      {/snippet}
-      {@render children()}
-    </SplitPane>
+      panels={[
+        { content: sidebarPanel, size: 224, minSize: 150, maxSize: 400, persistKey: 'sidebar' },
+        { content: children }
+      ]}
+    />
   {/if}
 </div>
 

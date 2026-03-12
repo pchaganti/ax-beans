@@ -374,14 +374,13 @@
   {@render tabSwitcher()}
 
   {#if selectedFile}
-    <SplitPane direction="vertical" side="start" initialSize={200} minSize={60} persistKey="changes-diff">
-      {#snippet children()}
-        {@render diffView()}
-      {/snippet}
-      {#snippet aside()}
-        {@render fileList()}
-      {/snippet}
-    </SplitPane>
+    <SplitPane
+      direction="vertical"
+      panels={[
+        { content: fileList, size: 200, minSize: 60, persistKey: 'changes-diff' },
+        { content: diffView }
+      ]}
+    />
   {:else}
     {@render fileList()}
   {/if}

@@ -141,7 +141,7 @@
     <div class="mb-2 flex flex-wrap items-center gap-2">
       <button
         onclick={copyId}
-        class="flex items-center gap-1 rounded px-2 py-1 font-mono text-xs transition-colors hover:bg-surface-alt"
+        class="flex cursor-pointer items-center gap-1 rounded px-2 py-1 font-mono text-xs transition-colors hover:bg-surface-alt"
         title="Copy ID to clipboard"
       >
         {bean.id}

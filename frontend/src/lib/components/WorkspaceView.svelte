@@ -74,32 +74,33 @@
 {/snippet}
 
 {#snippet changesChatSplit()}
+  {#snippet changesPanel()}
+    <ChangesPane path={worktreePath} beanId={worktreeId} {agentBusy} />
+  {/snippet}
+
   {#if ui.showChanges}
     <SplitPane
       direction="horizontal"
-      side="end"
-      persistKey="workspace-changes-chat-split"
-      initialSize={480}
-    >
-      {#snippet children()}
-        <ChangesPane path={worktreePath} beanId={worktreeId} {agentBusy} />
-      {/snippet}
-      {#snippet aside()}
-        {@render agentChatPanel()}
-      {/snippet}
-    </SplitPane>
+      panels={[
+        { content: changesPanel },
+        { content: agentChatPanel, size: 480, persistKey: 'workspace-changes-chat-split' }
+      ]}
+    />
   {:else}
     {@render agentChatPanel()}
   {/if}
 {/snippet}
 
-<SplitPane direction="vertical" side="end" persistKey="workspace-terminal" initialSize={300} collapsed={!ui.showTerminal}>
-  {#snippet children()}
-    {@render changesChatSplit()}
-  {/snippet}
-  {#snippet aside()}
-    {#if ui.terminalInitialized}
-      <TerminalPane sessionId={worktreeId} onClose={() => ui.toggleTerminal()} />
-    {/if}
-  {/snippet}
-</SplitPane>
+{#snippet terminalPanel()}
+  {#if ui.terminalInitialized}
+    <TerminalPane sessionId={worktreeId} onClose={() => ui.toggleTerminal()} />
+  {/if}
+{/snippet}
+
+<SplitPane
+  direction="vertical"
+  panels={[
+    { content: changesChatSplit },
+    { content: terminalPanel, size: 300, collapsed: !ui.showTerminal, persistKey: 'workspace-terminal' }
+  ]}
+/>
