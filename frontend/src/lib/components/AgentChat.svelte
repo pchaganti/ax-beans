@@ -49,7 +49,7 @@
   }
 </script>
 
-<div class="flex h-full flex-col font-mono text-sm">
+<div class="flex h-full flex-col text-sm">
   <AgentMessages {messages} {isRunning} {activityLabel} {subagentActivities} />
 
   <!-- Error banner -->

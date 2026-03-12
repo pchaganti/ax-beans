@@ -199,7 +199,7 @@
 </div>
 
 <style>
-  /* Ensure rendered markdown inherits monospace and uniform font size,
+  /* Ensure rendered markdown inherits uniform font size,
 	   but exclude code blocks so Shiki highlighting renders properly */
   .agent-prose :global(*:not(pre, pre *, code)) {
     font-family: inherit;

@@ -54,7 +54,7 @@
 
 {#if interaction.type === 'EXIT_PLAN'}
   <div class="border-t border-status-in-progress-text/20 bg-status-in-progress-bg/50 p-3">
-    <p class="mb-2 font-mono text-xs text-text-muted">
+    <p class="mb-2 text-xs text-text-muted">
       Agent wants to leave plan mode and start working.
     </p>
 
@@ -69,11 +69,11 @@
     <div class="flex items-center gap-3">
       <button
         onclick={onApprove}
-        class="cursor-pointer rounded bg-status-in-progress-text px-3 py-1 font-mono text-xs text-white transition-colors hover:opacity-90"
+        class="cursor-pointer rounded bg-status-in-progress-text px-3 py-1 text-xs text-white transition-colors hover:opacity-90"
       >
         Approve
       </button>
-      <span class="font-mono text-xs text-text-muted">or type below to refine the plan</span>
+      <span class="text-xs text-text-muted">or type below to refine the plan</span>
     </div>
   </div>
 {/if}
@@ -86,17 +86,17 @@
           <div class="space-y-2">
             <div>
               {#if q.header}
-                <span class="inline-block rounded bg-accent/15 px-1.5 py-0.5 font-mono text-xs font-bold text-accent">
+                <span class="inline-block rounded bg-accent/15 px-1.5 py-0.5 text-xs font-bold text-accent">
                   {q.header}
                 </span>
               {/if}
-              <p class="mt-1 font-mono text-sm text-text">{q.question}</p>
+              <p class="mt-1 text-sm text-text">{q.question}</p>
             </div>
             <div class="flex flex-col gap-1.5">
               {#each q.options as opt}
                 <button
                   class={[
-                    'cursor-pointer rounded border px-3 py-2 text-left font-mono text-xs transition-colors',
+                    'cursor-pointer rounded border px-3 py-2 text-left text-xs transition-colors',
                     q.multiSelect && multiSelectChoices.has(opt.label)
                       ? 'border-accent bg-accent/15 text-accent'
                       : 'border-border hover:border-accent/50 hover:bg-accent/5'
@@ -113,7 +113,7 @@
             {#if q.multiSelect && multiSelectChoices.size > 0}
               <button
                 onclick={submitMultiSelect}
-                class="cursor-pointer rounded bg-accent px-3 py-1.5 font-mono text-xs text-accent-text transition-colors hover:bg-accent/90"
+                class="cursor-pointer rounded bg-accent px-3 py-1.5 text-xs text-accent-text transition-colors hover:bg-accent/90"
               >
                 Submit ({multiSelectChoices.size} selected)
               </button>
@@ -121,11 +121,11 @@
           </div>
         {/each}
       </div>
-      <p class="mt-3 font-mono text-xs text-text-faint">
+      <p class="mt-3 text-xs text-text-faint">
         Or type a custom reply below.
       </p>
     {:else}
-      <p class="font-mono text-xs text-accent">
+      <p class="text-xs text-accent">
         Agent is waiting for your answer — type your reply below.
       </p>
     {/if}
@@ -133,7 +133,7 @@
 {/if}
 
 <style>
-  /* Ensure rendered markdown inherits monospace and uniform font size,
+  /* Ensure rendered markdown inherits uniform font size,
 	   but exclude code blocks so Shiki highlighting renders properly */
   .agent-prose :global(*:not(pre, pre *, code)) {
     font-family: inherit;

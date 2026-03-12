@@ -141,7 +141,7 @@
   {#if isRunning}
     <div class="flex items-center gap-2 px-1 pb-2 text-text-muted">
       <span class="agent-spinner"></span>
-      <span class="font-mono text-xs">
+      <span class="text-xs">
         {#if subagentActivities.length > 0}
           {subagentActivities.length} subagent{subagentActivities.length > 1 ? 's' : ''} working...
         {:else if systemStatus}
@@ -170,7 +170,7 @@
         onpaste={handlePaste}
         placeholder="Send a message..."
         rows={1}
-        class="flex-1 resize-none rounded bg-transparent px-3 py-2 font-mono text-sm
+        class="flex-1 resize-none rounded bg-transparent px-3 py-2 text-sm
 				text-text placeholder:text-text-faint
 				focus:outline-none"
       ></textarea>
@@ -197,7 +197,7 @@
     <button
       onclick={send}
       disabled={!inputText.trim() && pendingImages.length === 0}
-      class="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded bg-accent px-3 py-2 font-mono
+      class="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded bg-accent px-3 py-2
 				text-sm text-accent-text transition-colors hover:bg-accent/90
 				disabled:cursor-not-allowed disabled:opacity-50"
     >
@@ -208,7 +208,7 @@
     {#if isRunning}
       <button
         onclick={onStop}
-        class="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded bg-danger px-3 py-2 font-mono
+        class="inline-flex shrink-0 cursor-pointer items-center gap-1.5 rounded bg-danger px-3 py-2
 					text-sm text-white transition-colors hover:bg-danger/90"
       >
         <span class="icon-[uil--stop-circle] size-4"></span>
