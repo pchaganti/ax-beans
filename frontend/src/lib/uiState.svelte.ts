@@ -84,6 +84,14 @@ class UIState {
     localStorage.setItem('beans-changes-pane', this.showChanges ? 'true' : 'false');
   }
 
+  // Terminal pane (persisted to localStorage)
+  showTerminal = $state(false);
+
+  toggleTerminal() {
+    this.showTerminal = !this.showTerminal;
+    localStorage.setItem('beans-terminal-pane', this.showTerminal ? 'true' : 'false');
+  }
+
   // Filter text (persisted to localStorage)
   filterText = $state('');
 

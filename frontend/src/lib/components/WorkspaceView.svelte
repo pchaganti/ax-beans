@@ -9,6 +9,7 @@
   import BeanPane from './BeanPane.svelte';
   import ChangesPane from './ChangesPane.svelte';
   import PaneHeader from './PaneHeader.svelte';
+  import TerminalPane from './TerminalPane.svelte';
 
   interface Props {
     bean?: Bean;
@@ -53,6 +54,15 @@
           />
         </svg>
       </button>
+      <button
+        onclick={() => ui.toggleTerminal()}
+        class={['btn-toggle-icon', ui.showTerminal ? 'btn-toggle-active' : 'btn-toggle-inactive']}
+        title={ui.showTerminal ? 'Hide terminal' : 'Show terminal'}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+          <path fill-rule="evenodd" d="M3.25 3A2.25 2.25 0 001 5.25v9.5A2.25 2.25 0 003.25 17h13.5A2.25 2.25 0 0019 14.75v-9.5A2.25 2.25 0 0016.75 3H3.25zm.943 8.752a.75.75 0 01.055-1.06L6.128 9l-1.88-1.693a.75.75 0 111.004-1.114l2.5 2.25a.75.75 0 010 1.114l-2.5 2.25a.75.75 0 01-1.06-.055zM9.75 10.25a.75.75 0 000 1.5h2.5a.75.75 0 000-1.5h-2.5z" clip-rule="evenodd" />
+        </svg>
+      </button>
     {/snippet}
   </PaneHeader>
 {/snippet}
@@ -86,18 +96,31 @@
   {/if}
 {/snippet}
 
-{#if bean}
-  <SplitPane direction="horizontal" side="end" persistKey="workspace-chat-width" initialSize={480}>
-    {#snippet aside()}
-      {@render changesChatSplit()}
-    {/snippet}
+{#snippet workspaceContent()}
+  {#if bean}
+    <SplitPane direction="horizontal" side="end" persistKey="workspace-chat-width" initialSize={480}>
+      {#snippet aside()}
+        {@render changesChatSplit()}
+      {/snippet}
 
-    {#snippet children()}
-      <BeanPane {bean} onSelect={(b) => ui.selectBean(b)} onEdit={(b) => ui.openEditForm(b)} />
-    {/snippet}
-  </SplitPane>
-{:else}
-  <div class="flex h-full">
-    {@render changesChatSplit()}
-  </div>
-{/if}
+      {#snippet children()}
+        <BeanPane {bean} onSelect={(b) => ui.selectBean(b)} onEdit={(b) => ui.openEditForm(b)} />
+      {/snippet}
+    </SplitPane>
+  {:else}
+    <div class="flex h-full">
+      {@render changesChatSplit()}
+    </div>
+  {/if}
+{/snippet}
+
+<SplitPane direction="vertical" side="end" persistKey="workspace-terminal" initialSize={300} collapsed={!ui.showTerminal}>
+  {#snippet children()}
+    {@render workspaceContent()}
+  {/snippet}
+  {#snippet aside()}
+    {#if ui.showTerminal}
+      <TerminalPane sessionId={worktreeId} onClose={() => ui.toggleTerminal()} />
+    {/if}
+  {/snippet}
+</SplitPane>

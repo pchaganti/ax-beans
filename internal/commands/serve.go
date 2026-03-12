@@ -21,6 +21,7 @@ import (
 	"github.com/hmans/beans/internal/agent"
 	"github.com/hmans/beans/internal/cors"
 	"github.com/hmans/beans/internal/graph"
+	"github.com/hmans/beans/internal/terminal"
 	"github.com/hmans/beans/internal/web"
 	"github.com/hmans/beans/internal/worktree"
 	"github.com/hmans/beans/pkg/config"
@@ -115,6 +116,10 @@ func runServer(port int, origins []string) error {
 		}
 	}
 
+	// Create terminal session manager
+	termMgr := terminal.NewManager()
+	defer termMgr.Shutdown()
+
 	// Create agent session manager (with conversation persistence)
 	agentMgr := agent.NewManager(core.Root(), func(beanID string) string {
 		// Central/planning agent gets a planning-focused prompt
@@ -188,6 +193,9 @@ func runServer(port int, origins []string) error {
 		c.Header("X-Content-Type-Options", "nosniff")
 		c.File(path)
 	})
+
+	// Terminal WebSocket endpoint
+	RegisterTerminalRoute(router, termMgr, wtManager, checker.CheckOriginFunc(), filepath.Dir(core.Root()))
 
 	// Serve the embedded frontend SPA
 	router.NoRoute(gin.WrapH(web.Handler()))
