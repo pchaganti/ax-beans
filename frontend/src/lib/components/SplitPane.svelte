@@ -69,7 +69,9 @@
     }
 
     // Clamp: aside pane gets at least minSize, and leave minSize for the main pane too
-    const upperBound = maxSize ? Math.min(maxSize, containerSize - minSize) : containerSize - minSize;
+    const upperBound = maxSize
+      ? Math.min(maxSize, containerSize - minSize)
+      : containerSize - minSize;
     size = Math.max(minSize, Math.min(upperBound, newSize));
   }
 
@@ -106,7 +108,7 @@
       <div
         class={[
           'shrink-0 transition-colors',
-          isHorizontal ? 'w-1 cursor-col-resize' : 'h-1 cursor-row-resize',
+          isHorizontal ? 'w-px cursor-col-resize' : 'h-1 cursor-row-resize',
           isDragging ? 'bg-surface-dim' : 'bg-border hover:bg-surface-dim'
         ]}
         role="slider"
@@ -134,7 +136,7 @@
       <div
         class={[
           'shrink-0 transition-colors',
-          isHorizontal ? 'w-1 cursor-col-resize' : 'h-1 cursor-row-resize',
+          isHorizontal ? 'w-px cursor-col-resize' : 'h-1 cursor-row-resize',
           isDragging ? 'bg-surface-dim' : 'bg-border hover:bg-surface-dim'
         ]}
         role="slider"
