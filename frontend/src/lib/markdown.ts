@@ -289,3 +289,4 @@ function plainCodeExtension(): MarkedExtension {
 export function preloadHighlighter(): void {
   getHighlighter().catch(console.error);
 }
+

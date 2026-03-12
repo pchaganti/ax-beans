@@ -221,17 +221,48 @@ a,
   font-weight: bold;
 }
 
-/* ── Diff line styling ──────────────────────── */
-.diff-add {
-  @apply bg-green-500/15 text-success;
+/* ── Diff styling ───────────────────────────── */
+.diff-table {
+  @apply border-collapse;
 }
 
-.diff-del {
-  @apply bg-red-500/15 text-danger;
+.diff-table td {
+  @apply py-0 leading-snug text-text-muted;
 }
 
-.diff-hunk {
-  @apply text-accent;
+.diff-gutter {
+  @apply w-10 select-none text-right align-top text-text-faint;
+  @apply border-r border-border/50 pr-1.5;
+  font-variant-numeric: tabular-nums;
+}
+
+.diff-gutter-hunk {
+  @apply bg-accent/10 border-r border-border/50;
+}
+
+.diff-indicator {
+  @apply inline-block w-5 select-none text-center;
+}
+
+tr.diff-add {
+  @apply bg-green-500/8;
+}
+tr.diff-add td:first-child {
+  @apply text-green-400;
+}
+
+tr.diff-del {
+  @apply bg-red-500/8;
+}
+tr.diff-del td:first-child {
+  @apply text-red-400;
+}
+
+tr.diff-hunk {
+  @apply bg-accent/10;
+}
+tr.diff-hunk td {
+  @apply py-1 text-accent italic;
 }
 
 /* ── Light palette (default) ─────────────────── */

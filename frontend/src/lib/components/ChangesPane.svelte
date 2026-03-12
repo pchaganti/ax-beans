@@ -60,6 +60,8 @@
   let diffContent = $state<string>('');
   let diffLoading = $state(false);
 
+
+
   async function fetchActions() {
     if (!beanId) return;
     const result = await client.query(AGENT_ACTIONS_QUERY, { beanId }).toPromise();
@@ -179,7 +181,6 @@
   const displayChanges = $derived(activeTab === 'all' ? changesStore.allChanges : changesStore.changes);
   const totalCount = $derived(displayChanges.length);
 
-  const diffLines = $derived(diffContent ? diffContent.split('\n') : []);
 
   onMount(() => {
     changesStore.startPolling(path);
@@ -237,12 +238,52 @@
     return selectedFile?.path === change.path && selectedFile?.staged === change.staged;
   }
 
-  function diffLineClass(line: string): string {
-    if (line.startsWith('+') && !line.startsWith('+++')) return 'diff-add';
-    if (line.startsWith('-') && !line.startsWith('---')) return 'diff-del';
-    if (line.startsWith('@@')) return 'diff-hunk';
+  interface DiffLine {
+    type: 'add' | 'del' | 'hunk' | 'context' | 'header';
+    content: string;
+    oldNum: number | null;
+    newNum: number | null;
+  }
+
+  const parsedDiffLines = $derived.by(() => {
+    if (!diffContent) return [];
+    const raw = diffContent.split('\n');
+    const lines: DiffLine[] = [];
+    let oldNum = 0;
+    let newNum = 0;
+
+    for (const line of raw) {
+      if (line.startsWith('diff --git') || line.startsWith('index ') || line.startsWith('--- ') || line.startsWith('+++ ')) {
+        // Skip raw git headers
+        continue;
+      }
+      if (line.startsWith('@@')) {
+        const match = line.match(/@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@(.*)/);
+        if (match) {
+          oldNum = parseInt(match[1]);
+          newNum = parseInt(match[2]);
+          lines.push({ type: 'hunk', content: match[3]?.trim() || '', oldNum: null, newNum: null });
+        }
+        continue;
+      }
+      if (line.startsWith('+')) {
+        lines.push({ type: 'add', content: line.slice(1), oldNum: null, newNum: newNum++ });
+      } else if (line.startsWith('-')) {
+        lines.push({ type: 'del', content: line.slice(1), oldNum: oldNum++, newNum: null });
+      } else {
+        lines.push({ type: 'context', content: line.startsWith(' ') ? line.slice(1) : line, oldNum: oldNum++, newNum: newNum++ });
+      }
+    }
+    return lines;
+  });
+
+  function diffLineClass(type: DiffLine['type']): string {
+    if (type === 'add') return 'diff-add';
+    if (type === 'del') return 'diff-del';
+    if (type === 'hunk') return 'diff-hunk';
     return '';
   }
+
 </script>
 
 {#snippet fileRow(change: FileChange)}
@@ -319,8 +360,23 @@
       {:else if diffContent === ''}
         <p class="px-3 py-4 text-center text-text-muted">No diff available</p>
       {:else}
-        <pre class="font-mono text-xs leading-relaxed">{#each diffLines as line, i (i)}<span class={diffLineClass(line)}>{line}
-</span>{/each}</pre>
+        <table class="diff-table w-full font-mono text-sm">
+          <tbody>
+            {#each parsedDiffLines as line, i (i)}
+              {#if line.type === 'hunk'}
+                <tr class="diff-hunk">
+                  <td class="diff-gutter-hunk"></td>
+                  <td class="px-3 py-1">{line.content || '...'}</td>
+                </tr>
+              {:else}
+                <tr class={diffLineClass(line.type)}>
+                  <td class="diff-gutter">{line.newNum ?? line.oldNum ?? ''}</td>
+                  <td class="whitespace-pre pr-3">{#if line.type === 'add'}<span class="diff-indicator">+</span>{:else if line.type === 'del'}<span class="diff-indicator">-</span>{:else}<span class="diff-indicator"> </span>{/if}{line.content}</td>
+                </tr>
+              {/if}
+            {/each}
+          </tbody>
+        </table>
       {/if}
     </div>
   </div>
