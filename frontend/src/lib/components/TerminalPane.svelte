@@ -2,6 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { Terminal } from '@xterm/xterm';
   import { FitAddon } from '@xterm/addon-fit';
+  import { WebLinksAddon } from '@xterm/addon-web-links';
   import '@xterm/xterm/css/xterm.css';
   interface Props {
     sessionId: string;
@@ -127,6 +128,11 @@
     const fit = new FitAddon();
     fitAddon = fit;
     term.loadAddon(fit);
+    term.loadAddon(
+      new WebLinksAddon((_event, uri) => {
+        window.open(uri, '_blank', 'noopener');
+      })
+    );
     term.open(terminalEl);
 
     // Initial fit after DOM layout settles
