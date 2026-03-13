@@ -133,7 +133,7 @@
                 <span class="block text-xs font-normal text-text-faint">{item.description}</span>
               {/if}
             </div>
-            <div class="relative ml-auto h-4 w-4 shrink-0">
+            <div class="relative ml-auto h-4 w-4 shrink-0 self-start mt-0.5">
               {#if agentStatusesStore.isRunning(item.id)}
                 <div class="loader absolute inset-0" transition:fade={{ duration: 200 }}></div>
               {:else if item.id !== MAIN_WORKSPACE_ID}
