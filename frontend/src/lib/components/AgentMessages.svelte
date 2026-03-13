@@ -10,9 +10,10 @@
     isRunning: boolean;
     activityLabel: string;
     subagentActivities: SubagentActivity[];
+    setupRunning?: boolean;
   }
 
-  let { messages, isRunning, activityLabel, subagentActivities }: Props = $props();
+  let { messages, isRunning, activityLabel, subagentActivities, setupRunning = false }: Props = $props();
 
   let messagesEl: HTMLDivElement | undefined = $state();
   let renderedMessages = $state<Map<string, string>>(new Map());
@@ -102,11 +103,17 @@
     onclick={handleBeanLinkClick}
     onscroll={handleMessagesScroll}
   >
-    {#if messages.length === 0}
+    {#if setupRunning}
+      <div class="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-muted animate-pulse">
+        <p>Workspace setup is running...</p>
+      </div>
+    {/if}
+
+    {#if messages.length === 0 && !setupRunning}
       <div class="flex h-full items-center justify-center text-text-faint">
         <p>Send a message to start a conversation with the agent.</p>
       </div>
-    {:else}
+    {:else if messages.length > 0}
       {#each messages as msg, i}
         {#if msg.role === 'USER'}
           <div class="rounded-lg bg-surface-alt px-3 py-2">
@@ -128,7 +135,7 @@
             </div>
           </div>
         {:else if msg.role === 'INFO'}
-          <div class="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-muted italic">
+          <div class="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-muted">
             <p class="whitespace-pre-wrap">{msg.content}</p>
           </div>
         {:else if msg.role === 'TOOL'}

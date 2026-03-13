@@ -60,11 +60,15 @@
 
   const agentBusy = $derived(agentStore.session?.status === 'RUNNING');
 
-  const worktreePath = $derived(
+  const worktree = $derived(
     worktreeId === MAIN_WORKSPACE_ID
       ? undefined
-      : worktreeStore.worktrees.find((wt) => wt.id === worktreeId)?.path
+      : worktreeStore.worktrees.find((wt) => wt.id === worktreeId)
   );
+
+  const worktreePath = $derived(worktree?.path);
+
+  const setupRunning = $derived(worktree?.setupStatus === 'RUNNING');
 </script>
 
 {#snippet changesPanel()}
@@ -72,7 +76,7 @@
 {/snippet}
 
 {#snippet agentChatPanel()}
-  <AgentChat beanId={worktreeId} store={agentStore} />
+  <AgentChat beanId={worktreeId} store={agentStore} {setupRunning} />
 {/snippet}
 
 {#snippet terminalPanel()}

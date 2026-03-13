@@ -8,9 +8,10 @@
   interface Props {
     beanId: string;
     store?: AgentChatStore;
+    setupRunning?: boolean;
   }
 
-  let { beanId, store: externalStore }: Props = $props();
+  let { beanId, store: externalStore, setupRunning = false }: Props = $props();
 
   const ownStore = new AgentChatStore();
   const store = $derived(externalStore ?? ownStore);
@@ -50,7 +51,7 @@
 </script>
 
 <div class="flex h-full flex-col bg-surface text-sm">
-  <AgentMessages {messages} {isRunning} {activityLabel} {subagentActivities} />
+  <AgentMessages {messages} {isRunning} {activityLabel} {subagentActivities} {setupRunning} />
 
   <!-- Error banner -->
   {#if sessionError || store.error}
