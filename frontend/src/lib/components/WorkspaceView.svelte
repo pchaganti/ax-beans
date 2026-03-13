@@ -136,11 +136,12 @@
       <AgentActions beanId={worktreeId} {agentBusy} />
       {#if isWorktree && hasNoChanges}
         <button
-          class="btn-toggle ml-2 cursor-pointer text-red-400 hover:text-red-300"
+          class="btn-toggle btn-toggle-inactive ml-2 cursor-pointer hover:border-danger/30 hover:bg-danger/10 hover:text-danger"
           title="Destroy this worktree"
           onclick={() => (confirmingDestroy = true)}
         >
-          <span class="iconify lucide--trash-2 size-4"></span>
+          <span class="icon-[uil--trash-alt] size-4"></span>
+          Destroy
         </button>
       {/if}
     {/snippet}
