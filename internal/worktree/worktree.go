@@ -31,10 +31,11 @@ type Worktree struct {
 
 // Manager handles git worktree operations for a repository.
 type Manager struct {
-	repoRoot string
-	beansDir string
-	baseRef  string
-	mu       sync.RWMutex
+	repoRoot     string
+	beansDir     string
+	baseRef      string
+	setupCommand string // shell command to run after worktree creation
+	mu           sync.RWMutex
 
 	// subscribers for worktree change events
 	subMu       sync.Mutex
@@ -44,8 +45,9 @@ type Manager struct {
 // NewManager creates a new worktree manager for the given repository root.
 // beansDir is the path to the .beans directory where worktrees are stored.
 // baseRef is the git ref to use as the starting point for new branches (e.g. "main").
-func NewManager(repoRoot, beansDir, baseRef string) *Manager {
-	return &Manager{repoRoot: repoRoot, beansDir: beansDir, baseRef: baseRef}
+// setupCommand is an optional shell command to run inside new worktrees after creation.
+func NewManager(repoRoot, beansDir, baseRef, setupCommand string) *Manager {
+	return &Manager{repoRoot: repoRoot, beansDir: beansDir, baseRef: baseRef, setupCommand: setupCommand}
 }
 
 // RepoRoot returns the path to the main repository root.
@@ -256,6 +258,18 @@ func (m *Manager) Create(name string) (*Worktree, error) {
 	// Save the name metadata
 	if err := m.saveMeta(id, &worktreeMeta{Name: name}); err != nil {
 		log.Printf("[worktree] warning: failed to save metadata for %s: %v", id, err)
+	}
+
+	// Run setup command if configured
+	if m.setupCommand != "" {
+		log.Printf("[worktree] running setup command in %s: %s", worktreePath, m.setupCommand)
+		setupCmd := exec.Command("sh", "-c", m.setupCommand)
+		setupCmd.Dir = worktreePath
+		if out, err := setupCmd.CombinedOutput(); err != nil {
+			log.Printf("[worktree] setup command failed in %s: %s: %v", worktreePath, strings.TrimSpace(string(out)), err)
+		} else {
+			log.Printf("[worktree] setup command completed in %s", worktreePath)
+		}
 	}
 
 	wt := &Worktree{

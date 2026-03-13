@@ -1141,7 +1141,72 @@ func TestSaveIncludesWorktreeSection(t *testing.T) {
 	}
 }
 
-func TestSaveOmitsEmptyWorktreeSection(t *testing.T) {
+func TestWorktreeSetupAndRun(t *testing.T) {
+	t.Run("returns empty strings by default", func(t *testing.T) {
+		cfg := Default()
+		if cfg.GetWorktreeSetup() != "" {
+			t.Errorf("GetWorktreeSetup() = %q, want empty string", cfg.GetWorktreeSetup())
+		}
+		if cfg.GetWorktreeRun() != "" {
+			t.Errorf("GetWorktreeRun() = %q, want empty string", cfg.GetWorktreeRun())
+		}
+	})
+
+	t.Run("loads from config file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		configPath := filepath.Join(tmpDir, ConfigFileName)
+
+		configContent := `beans:
+  prefix: test-
+worktree:
+  setup: pnpm install
+  run: mise dev
+`
+		if err := os.WriteFile(configPath, []byte(configContent), 0644); err != nil {
+			t.Fatalf("WriteFile error = %v", err)
+		}
+
+		cfg, err := Load(configPath)
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+
+		if cfg.GetWorktreeSetup() != "pnpm install" {
+			t.Errorf("GetWorktreeSetup() = %q, want \"pnpm install\"", cfg.GetWorktreeSetup())
+		}
+		if cfg.GetWorktreeRun() != "mise dev" {
+			t.Errorf("GetWorktreeRun() = %q, want \"mise dev\"", cfg.GetWorktreeRun())
+		}
+	})
+
+	t.Run("saves to config file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		cfg := DefaultWithPrefix("test-")
+		cfg.Worktree.Setup = "npm install"
+		cfg.Worktree.Run = "npm run dev"
+		cfg.SetConfigDir(tmpDir)
+
+		if err := cfg.Save(tmpDir); err != nil {
+			t.Fatalf("Save() error = %v", err)
+		}
+
+		data, err := os.ReadFile(filepath.Join(tmpDir, ConfigFileName))
+		if err != nil {
+			t.Fatalf("ReadFile error = %v", err)
+		}
+
+		content := string(data)
+		if !strings.Contains(content, "setup: npm install") {
+			t.Error("expected setup: npm install in saved config")
+		}
+		if !strings.Contains(content, "run: npm run dev") {
+			t.Error("expected run: npm run dev in saved config")
+		}
+	})
+}
+
+func TestSaveAlwaysIncludesWorktreeStubs(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	cfg := DefaultWithPrefix("test-")
@@ -1157,8 +1222,16 @@ func TestSaveOmitsEmptyWorktreeSection(t *testing.T) {
 		t.Fatalf("ReadFile error = %v", err)
 	}
 
-	if strings.Contains(string(data), "worktree:") {
-		t.Error("expected worktree section to be omitted when not configured")
+	content := string(data)
+	// setup and run are always emitted as stubs so users discover them
+	if !strings.Contains(content, "worktree:") {
+		t.Error("expected worktree section to always be present")
+	}
+	if !strings.Contains(content, "setup:") {
+		t.Error("expected setup stub in worktree section")
+	}
+	if !strings.Contains(content, "run:") {
+		t.Error("expected run stub in worktree section")
 	}
 }
 

@@ -140,7 +140,7 @@ branch refs/heads/beans/beans-good
 
 func TestCreateAndList(t *testing.T) {
 	repoDir, beansDir := initTestRepo(t)
-	mgr := NewManager(repoDir, beansDir, "")
+	mgr := NewManager(repoDir, beansDir, "", "")
 
 	// List should be empty initially
 	wts, err := mgr.List()
@@ -195,7 +195,7 @@ func TestCreateAndList(t *testing.T) {
 
 func TestCreateEmptyName(t *testing.T) {
 	repoDir, beansDir := initTestRepo(t)
-	mgr := NewManager(repoDir, beansDir, "")
+	mgr := NewManager(repoDir, beansDir, "", "")
 
 	_, err := mgr.Create("")
 	if err == nil {
@@ -205,7 +205,7 @@ func TestCreateEmptyName(t *testing.T) {
 
 func TestRemove(t *testing.T) {
 	repoDir, beansDir := initTestRepo(t)
-	mgr := NewManager(repoDir, beansDir, "")
+	mgr := NewManager(repoDir, beansDir, "", "")
 
 	wt, err := mgr.Create("to-remove")
 	if err != nil {
@@ -233,7 +233,7 @@ func TestRemove(t *testing.T) {
 
 func TestRemoveStaleWorktree(t *testing.T) {
 	repoDir, beansDir := initTestRepo(t)
-	mgr := NewManager(repoDir, beansDir, "")
+	mgr := NewManager(repoDir, beansDir, "", "")
 
 	// Create a worktree, then delete its directory out from under git
 	wt, err := mgr.Create("to-stale")
@@ -252,7 +252,7 @@ func TestRemoveStaleWorktree(t *testing.T) {
 
 func TestRemoveNonexistent(t *testing.T) {
 	repoDir, beansDir := initTestRepo(t)
-	mgr := NewManager(repoDir, beansDir, "")
+	mgr := NewManager(repoDir, beansDir, "", "")
 
 	// Remove a worktree that doesn't exist should return an error
 	err := mgr.Remove("wt-nonexistent")
@@ -291,7 +291,7 @@ func TestCreateUsesBaseRef(t *testing.T) {
 	otherCommit := strings.TrimSpace(string(otherOut))
 
 	// Create a worktree manager with baseRef pointing to "other"
-	mgr := NewManager(repoDir, beansDir, "other")
+	mgr := NewManager(repoDir, beansDir, "other", "")
 	wt, err := mgr.Create("baseref-test")
 	if err != nil {
 		t.Fatalf("Create: %v", err)
@@ -313,7 +313,7 @@ func TestCreateUsesBaseRef(t *testing.T) {
 
 func TestSubscription(t *testing.T) {
 	repoDir, beansDir := initTestRepo(t)
-	mgr := NewManager(repoDir, beansDir, "")
+	mgr := NewManager(repoDir, beansDir, "", "")
 
 	ch := mgr.Subscribe()
 	defer mgr.Unsubscribe(ch)
@@ -354,7 +354,7 @@ func TestDetectBeanIDs(t *testing.T) {
 	gitRun(t, repoDir, "add", ".beans/.gitkeep")
 	gitRun(t, repoDir, "commit", "-m", "add .beans dir")
 
-	mgr := NewManager(repoDir, beansDir, "main")
+	mgr := NewManager(repoDir, beansDir, "main", "")
 
 	// Create a worktree
 	wt, err := mgr.Create("detect-test")
@@ -421,7 +421,7 @@ func TestDetectBeanIDs(t *testing.T) {
 
 func TestDetectBeanIDs_NoChanges(t *testing.T) {
 	repoDir, beansDir := initTestRepo(t)
-	mgr := NewManager(repoDir, beansDir, "main")
+	mgr := NewManager(repoDir, beansDir, "main", "")
 
 	// Create a worktree with no bean changes
 	wt, err := mgr.Create("no-changes")
@@ -445,7 +445,7 @@ func TestDetectBeanIDs_UncommittedChanges(t *testing.T) {
 	gitRun(t, repoDir, "add", ".beans/.gitkeep")
 	gitRun(t, repoDir, "commit", "-m", "add .beans dir")
 
-	mgr := NewManager(repoDir, beansDir, "main")
+	mgr := NewManager(repoDir, beansDir, "main", "")
 
 	wt, err := mgr.Create("uncommitted-test")
 	if err != nil {
@@ -482,7 +482,7 @@ func TestDetectBeanIDs_DeletedFile(t *testing.T) {
 	gitRun(t, repoDir, "add", "-A")
 	gitRun(t, repoDir, "commit", "-m", "add bean")
 
-	mgr := NewManager(repoDir, beansDir, "main")
+	mgr := NewManager(repoDir, beansDir, "main", "")
 
 	wt, err := mgr.Create("delete-test")
 	if err != nil {
@@ -507,7 +507,7 @@ func TestDetectBeanIDs_DeletedFile(t *testing.T) {
 
 func TestUpdateDescription(t *testing.T) {
 	repoDir, beansDir := initTestRepo(t)
-	mgr := NewManager(repoDir, beansDir, "")
+	mgr := NewManager(repoDir, beansDir, "", "")
 
 	// Create a worktree
 	wt, err := mgr.Create("desc-test")
@@ -546,6 +546,41 @@ func TestUpdateDescription(t *testing.T) {
 	// The name should still be preserved
 	if wts[0].Name != "desc-test" {
 		t.Errorf("Name = %q, want %q", wts[0].Name, "desc-test")
+	}
+}
+
+func TestCreateRunsSetupCommand(t *testing.T) {
+	repoDir, beansDir := initTestRepo(t)
+
+	// Use a setup command that creates a marker file
+	mgr := NewManager(repoDir, beansDir, "", "touch .setup-done")
+
+	wt, err := mgr.Create("setup-test")
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	// The setup command should have created the marker file in the worktree
+	markerPath := filepath.Join(wt.Path, ".setup-done")
+	if _, err := os.Stat(markerPath); os.IsNotExist(err) {
+		t.Error("setup command did not run: .setup-done file not found")
+	}
+}
+
+func TestCreateNoSetupCommand(t *testing.T) {
+	repoDir, beansDir := initTestRepo(t)
+
+	// No setup command — should still create fine
+	mgr := NewManager(repoDir, beansDir, "", "")
+
+	wt, err := mgr.Create("no-setup-test")
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	// Just verify the worktree was created
+	if _, err := os.Stat(wt.Path); os.IsNotExist(err) {
+		t.Error("worktree directory not created")
 	}
 }
 

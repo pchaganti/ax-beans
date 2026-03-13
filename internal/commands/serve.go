@@ -107,7 +107,7 @@ func runServer(port int, origins []string) error {
 		c.Next()
 	})
 	// Create worktree manager (worktrees stored inside .beans/worktrees/)
-	wtManager := worktree.NewManager(cfg.ConfigDir(), core.Root(), cfg.GetWorktreeBaseRef())
+	wtManager := worktree.NewManager(cfg.ConfigDir(), core.Root(), cfg.GetWorktreeBaseRef(), cfg.GetWorktreeSetup())
 
 	// Watch existing worktrees for bean changes
 	if existingWTs, err := wtManager.List(); err == nil {

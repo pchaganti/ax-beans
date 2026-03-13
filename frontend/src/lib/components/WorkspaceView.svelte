@@ -1,6 +1,9 @@
 <script lang="ts">
+  import { gql } from 'urql';
   import { AgentChatStore } from '$lib/agentChat.svelte';
   import { changesStore } from '$lib/changes.svelte';
+  import { configStore } from '$lib/config.svelte';
+  import { client } from '$lib/graphqlClient';
   import { ui } from '$lib/uiState.svelte';
   import { worktreeStore, MAIN_WORKSPACE_ID } from '$lib/worktrees.svelte';
   import { onDestroy } from 'svelte';
@@ -12,6 +15,27 @@
   import TerminalPane from './TerminalPane.svelte';
   import ViewToolbar from './ViewToolbar.svelte';
   import AgentActions from './AgentActions.svelte';
+
+  const WRITE_TERMINAL_INPUT = gql`
+    mutation WriteTerminalInput($sessionId: String!, $data: String!) {
+      writeTerminalInput(sessionId: $sessionId, data: $data)
+    }
+  `;
+
+  async function handleRun() {
+    // Show and initialize the terminal
+    ui.terminalInitialized = true;
+    ui.showTerminal = true;
+
+    // Write the run command — the resolver creates the session on demand
+    // if the terminal pane hasn't connected via WebSocket yet.
+    await client
+      .mutation(WRITE_TERMINAL_INPUT, {
+        sessionId: worktreeId,
+        data: configStore.worktreeRunCommand + '\n'
+      })
+      .toPromise();
+  }
 
   interface Props {
     worktreeId: string;
@@ -81,6 +105,18 @@
 
 <div class="flex h-full flex-col">
   <ViewToolbar>
+    {#if configStore.worktreeRunCommand}
+      <button
+        class="btn-toggle btn-toggle-inactive ml-1 cursor-pointer"
+        title={`Run: ${configStore.worktreeRunCommand}`}
+        onclick={handleRun}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="h-4 w-4">
+          <path d="M6.3 2.84A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.27l9.344-5.891a1.5 1.5 0 000-2.538L6.3 2.84z" />
+        </svg>
+        Run
+      </button>
+    {/if}
     {#snippet right()}
       <AgentActions beanId={worktreeId} {agentBusy} />
     {/snippet}

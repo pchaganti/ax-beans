@@ -73,6 +73,12 @@ type Query {
   When false, the UI should hide agent chats, status panes, and worktree features.
   """
   agentEnabled: Boolean!
+
+  """
+  Shell command to run the project (from worktree.run config).
+  When non-empty, the UI shows a "Run" button in workspace toolbars.
+  """
+  worktreeRunCommand: String!
 }
 
 type Subscription {
@@ -179,6 +185,12 @@ type Mutation {
   Remove a bean from the blocked-by list
   """
   removeBlockedBy(id: ID!, targetId: ID!, ifMatch: String): Bean!
+
+  """
+  Write input data to an existing terminal session's PTY.
+  Creates the session if it doesn't exist yet.
+  """
+  writeTerminalInput(sessionId: String!, data: String!): Boolean!
 
   """
   Create a new worktree. Returns the created worktree with a generated ID.

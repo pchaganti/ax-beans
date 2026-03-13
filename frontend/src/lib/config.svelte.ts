@@ -6,6 +6,7 @@ const CONFIG_QUERY = gql`
     projectName
     mainBranch
     agentEnabled
+    worktreeRunCommand
   }
 `;
 
@@ -13,6 +14,7 @@ class ConfigStore {
   projectName = $state('');
   mainBranch = $state('main');
   agentEnabled = $state(true);
+  worktreeRunCommand = $state('');
 
   async load(): Promise<void> {
     const result = await client.query(CONFIG_QUERY, {}).toPromise();
@@ -24,6 +26,7 @@ class ConfigStore {
       this.projectName = result.data.projectName;
       this.mainBranch = result.data.mainBranch;
       this.agentEnabled = result.data.agentEnabled;
+      this.worktreeRunCommand = result.data.worktreeRunCommand;
     }
   }
 }

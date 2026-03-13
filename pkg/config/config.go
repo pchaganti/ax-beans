@@ -86,6 +86,13 @@ type WorktreeConfig struct {
 	// BaseRef is the git ref to use as the starting point for new worktree branches.
 	// Default: "main"
 	BaseRef string `yaml:"base_ref,omitempty"`
+
+	// Setup is a shell command to run inside a worktree after creation (e.g. "pnpm install").
+	Setup string `yaml:"setup,omitempty"`
+
+	// Run is a shell command to run the project (e.g. "mise dev").
+	// When set, a "Run" button appears in the workspace toolbar.
+	Run string `yaml:"run,omitempty"`
 }
 
 // AgentConfig defines settings for agent sessions.
@@ -387,6 +394,13 @@ func (c *Config) toYAMLNode() *yaml.Node {
 		key.HeadComment = "Git ref to use as the base for new worktree branches (default: main)"
 		worktreeMapping.Content = append(worktreeMapping.Content, key, strNode(c.Worktree.BaseRef))
 	}
+	setupKey := strNode("setup")
+	setupKey.HeadComment = "Shell command to run inside a worktree after creation (e.g. \"pnpm install\")"
+	worktreeMapping.Content = append(worktreeMapping.Content, setupKey, strNode(c.Worktree.Setup))
+
+	runKey := strNode("run")
+	runKey.HeadComment = "Shell command to run the project (adds a \"Run\" button to workspace toolbar)"
+	worktreeMapping.Content = append(worktreeMapping.Content, runKey, strNode(c.Worktree.Run))
 
 	// Build the agent mapping
 	agentMapping := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
@@ -630,6 +644,16 @@ func (c *Config) GetWorktreeBaseRef() string {
 		return DefaultWorktreeBaseRef
 	}
 	return c.Worktree.BaseRef
+}
+
+// GetWorktreeSetup returns the configured setup command for new worktrees.
+func (c *Config) GetWorktreeSetup() string {
+	return c.Worktree.Setup
+}
+
+// GetWorktreeRun returns the configured run command for worktrees.
+func (c *Config) GetWorktreeRun() string {
+	return c.Worktree.Run
 }
 
 // IsAgentEnabled returns whether agent functionality is enabled.

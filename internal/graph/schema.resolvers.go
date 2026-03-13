@@ -523,6 +523,40 @@ func (r *mutationResolver) RemoveBlockedBy(ctx context.Context, id string, targe
 	return b, nil
 }
 
+// WriteTerminalInput is the resolver for the writeTerminalInput field.
+// Creates the session on demand if it doesn't exist yet.
+func (r *mutationResolver) WriteTerminalInput(ctx context.Context, sessionID string, data string) (bool, error) {
+	if r.TerminalMgr == nil {
+		return false, fmt.Errorf("terminal support not available")
+	}
+
+	sess := r.TerminalMgr.Get(sessionID)
+	if sess == nil {
+		// Session doesn't exist yet — create it on demand so callers
+		// don't need to race against the terminal pane's WebSocket init.
+		var workDir string
+		if sessionID == CentralSessionID {
+			workDir = r.ProjectRoot
+		} else if r.WorktreeMgr != nil {
+			workDir = r.WorktreeMgr.WorktreePath(sessionID)
+		}
+		if workDir == "" {
+			return false, fmt.Errorf("terminal session %q not found and cannot resolve work dir", sessionID)
+		}
+		var err error
+		sess, _, err = r.TerminalMgr.GetOrCreate(sessionID, workDir, 80, 24)
+		if err != nil {
+			return false, fmt.Errorf("failed to create terminal session: %w", err)
+		}
+	}
+
+	if _, err := sess.Write([]byte(data)); err != nil {
+		return false, fmt.Errorf("write to terminal: %w", err)
+	}
+
+	return true, nil
+}
+
 // CreateWorktree is the resolver for the createWorktree field.
 func (r *mutationResolver) CreateWorktree(ctx context.Context, name string) (*model.Worktree, error) {
 	if r.WorktreeMgr == nil {
@@ -1011,6 +1045,15 @@ func (r *queryResolver) AgentEnabled(ctx context.Context) (bool, error) {
 		return true, nil
 	}
 	return cfg.IsAgentEnabled(), nil
+}
+
+// WorktreeRunCommand is the resolver for the worktreeRunCommand field.
+func (r *queryResolver) WorktreeRunCommand(ctx context.Context) (string, error) {
+	cfg := r.Core.Config()
+	if cfg == nil {
+		return "", nil
+	}
+	return cfg.GetWorktreeRun(), nil
 }
 
 // BeanChanged is the resolver for the beanChanged field.
