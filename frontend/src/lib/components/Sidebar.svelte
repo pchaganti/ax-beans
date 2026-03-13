@@ -142,7 +142,7 @@
             {#each item.beans as wtBean (wtBean.id)}
               <button
                 onclick={() => {
-                  ui.navigateTo('planning');
+                  ui.navigateTo(item.id);
                   ui.selectBeanById(wtBean.id);
                 }}
                 class={[

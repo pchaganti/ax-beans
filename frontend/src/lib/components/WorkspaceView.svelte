@@ -6,6 +6,7 @@
   import { onDestroy } from 'svelte';
   import SplitPane from './SplitPane.svelte';
   import AgentChat from './AgentChat.svelte';
+  import BeanPane from './BeanPane.svelte';
   import ChangesPane from './ChangesPane.svelte';
 
   import TerminalPane from './TerminalPane.svelte';
@@ -56,12 +57,24 @@
   {/if}
 {/snippet}
 
+{#snippet beanDetailPanel()}
+  {#if ui.currentBean}
+    <BeanPane
+      bean={ui.currentBean}
+      onSelect={(b) => ui.selectBean(b)}
+      onEdit={(b) => ui.openEditForm(b)}
+      onClose={() => ui.clearSelection()}
+    />
+  {/if}
+{/snippet}
+
 {#snippet mainContent()}
   <SplitPane
     direction="horizontal"
     panels={[
       { content: agentChatPanel },
-      { content: changesPanel, size: 420, collapsed: !ui.showChanges, persistKey: 'workspace-changes' }
+      { content: changesPanel, size: 420, collapsed: !ui.showChanges, persistKey: 'workspace-changes' },
+      { content: beanDetailPanel, size: 480, collapsed: !ui.currentBean, persistKey: 'workspace-detail' }
     ]}
   />
 {/snippet}
