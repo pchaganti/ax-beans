@@ -44,7 +44,7 @@ func TestReadOutputMessageOrder(t *testing.T) {
 	}
 	m.sessions["bean-test"] = session
 
-	m.readOutput("bean-test", strings.NewReader(lines), "", false)
+	m.readOutput("bean-test", strings.NewReader(lines), "")
 
 	// Expected message order:
 	// [0] USER: "hello"          (pre-existing)
@@ -108,7 +108,7 @@ func TestReadOutputMultiTurnResetsStatus(t *testing.T) {
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
-		m.readOutput("bean-multi-turn", pr, "", false)
+		m.readOutput("bean-multi-turn", pr, "")
 	}()
 
 	// Helper to write a line and wait for it to be processed
@@ -194,7 +194,7 @@ func TestReadOutputMultipleTools(t *testing.T) {
 	}
 	m.sessions["bean-multi"] = session
 
-	m.readOutput("bean-multi", strings.NewReader(lines), "", false)
+	m.readOutput("bean-multi", strings.NewReader(lines), "")
 
 	// Expected: USER, ASSISTANT(Step 1), TOOL(Bash), ASSISTANT(Step 2), TOOL(Read), ASSISTANT(Step 3)
 	msgs := session.Messages

@@ -160,10 +160,10 @@ func runServer(port int, origins []string) error {
 		}
 	})
 
-	// Auto-generate workspace descriptions after the first agent response.
+	// Auto-generate workspace descriptions when the first user message is sent.
 	// Runs a cheap Claude call (Haiku) in the background to summarize what
 	// the workspace is doing, then stores it as worktree metadata.
-	agentMgr.SetOnFirstResponse(func(beanID string, messages []agent.Message) {
+	agentMgr.SetOnFirstUserMessage(func(beanID string, message string) {
 		// Only generate for worktree agents, not central
 		if beanID == graph.CentralSessionID {
 			return
@@ -172,7 +172,7 @@ func runServer(port int, origins []string) error {
 		if wts, err := wtManager.List(); err == nil {
 			for _, wt := range wts {
 				if wt.ID == beanID && wt.Description == "" {
-					desc := agent.GenerateDescription(messages)
+					desc := agent.GenerateDescription(message)
 					if desc != "" {
 						if err := wtManager.UpdateDescription(beanID, desc); err != nil {
 							log.Printf("[beans] failed to save workspace description for %s: %v", beanID, err)

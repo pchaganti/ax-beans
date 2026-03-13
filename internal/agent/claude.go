@@ -162,10 +162,6 @@ func (m *Manager) spawnAndRun(beanID string, session *Session) {
 
 	log.Printf("[agent:%s] spawned claude process (pid=%d, dir=%s)", beanID, cmd.Process.Pid, session.WorkDir)
 
-	// Track whether this is the first spawn (no prior session) so we can
-	// fire the onFirstResponse callback after the first turn completes.
-	isFirstSpawn := session.SessionID == ""
-
 	// Send the initial user message, prepending bean context on first spawn
 	lastMsg := session.Messages[len(session.Messages)-1]
 	initialMsg := lastMsg.Content
@@ -181,7 +177,7 @@ func (m *Manager) spawnAndRun(beanID string, session *Session) {
 	}
 
 	// Read stdout line by line
-	m.readOutput(beanID, stdout, session.WorkDir, isFirstSpawn)
+	m.readOutput(beanID, stdout, session.WorkDir)
 
 	// Process exited — clean up.
 	// Only modify state if this proc is still the current one for this beanID.
@@ -208,9 +204,7 @@ func (m *Manager) spawnAndRun(beanID string, session *Session) {
 
 // readOutput reads Claude Code's stream-json output line by line,
 // updates the session state, and notifies subscribers.
-// isFirstSpawn is true when this is the session's first process (no prior SessionID),
-// used to trigger the onFirstResponse callback after the first turn completes.
-func (m *Manager) readOutput(beanID string, stdout io.Reader, workDir string, isFirstSpawn bool) {
+func (m *Manager) readOutput(beanID string, stdout io.Reader, workDir string) {
 	scanner := bufio.NewScanner(stdout)
 	// Increase buffer for long lines (1MB)
 	scanner.Buffer(make([]byte, 0, 1024*1024), 1024*1024)
@@ -532,20 +526,6 @@ func (m *Manager) readOutput(beanID string, stdout io.Reader, workDir string, is
 			}
 			m.mu.Unlock()
 			m.notify(beanID)
-
-			// Fire onFirstResponse callback after the first turn completes
-			if isFirstSpawn && m.onFirstResponse != nil {
-				isFirstSpawn = false // only fire once
-				m.mu.RLock()
-				if s, ok := m.sessions[beanID]; ok {
-					msgs := make([]Message, len(s.Messages))
-					copy(msgs, s.Messages)
-					m.mu.RUnlock()
-					go m.onFirstResponse(beanID, msgs)
-				} else {
-					m.mu.RUnlock()
-				}
-			}
 
 			// After compact, prune orphaned image attachments
 			if m.wasLastUserMessage(beanID, "/compact") {

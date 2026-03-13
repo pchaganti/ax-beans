@@ -7,40 +7,23 @@ import (
 )
 
 func TestBuildDescribePrompt(t *testing.T) {
-	messages := []Message{
-		{Role: RoleUser, Content: "Fix the auth bug"},
-		{Role: RoleAssistant, Content: "I'll look into the authentication issue."},
-		{Role: RoleTool, Content: "Read: src/auth.go"},
-	}
-
-	prompt := buildDescribePrompt(messages)
+	prompt := buildDescribePrompt("Fix the auth bug")
 
 	// Should contain the system prompt
-	if !strings.Contains(prompt, "Summarize what this workspace is doing") {
+	if !strings.Contains(prompt, "Summarize what this workspace will be doing") {
 		t.Error("prompt should contain system instructions")
 	}
 
-	// Should include user and assistant messages
-	if !strings.Contains(prompt, "User: Fix the auth bug") {
+	// Should include the user message
+	if !strings.Contains(prompt, "Fix the auth bug") {
 		t.Error("prompt should contain user message")
-	}
-	if !strings.Contains(prompt, "Assistant: I'll look into the authentication issue.") {
-		t.Error("prompt should contain assistant message")
-	}
-
-	// Should NOT include tool messages
-	if strings.Contains(prompt, "Read: src/auth.go") {
-		t.Error("prompt should not contain tool messages")
 	}
 }
 
 func TestBuildDescribePromptTruncation(t *testing.T) {
 	longContent := strings.Repeat("x", 600)
-	messages := []Message{
-		{Role: RoleUser, Content: longContent},
-	}
 
-	prompt := buildDescribePrompt(messages)
+	prompt := buildDescribePrompt(longContent)
 
 	// Should be truncated to 500 chars + "..."
 	if strings.Contains(prompt, strings.Repeat("x", 501)) {
@@ -71,84 +54,61 @@ func TestCleanDescription(t *testing.T) {
 	}
 }
 
-func TestReadOutputFirstResponseCallback(t *testing.T) {
-	// Simulate a first-spawn session where isFirstSpawn=true.
-	// Verify the onFirstResponse callback fires after the first eventResult.
-	lines := strings.Join([]string{
-		`{"type":"content_block_start","content_block":{"type":"text","text":""}}`,
-		`{"type":"content_block_delta","delta":{"type":"text_delta","text":"Hello, I'll help you."}}`,
-		`{"type":"result","session_id":"sess-first"}`,
-	}, "\n")
-
-	callbackCalled := make(chan struct{}, 1)
+func TestSendMessageFirstUserMessageCallback(t *testing.T) {
+	// Verify the onFirstUserMessage callback fires when SendMessage creates a new session.
+	callbackCalled := make(chan string, 1)
 
 	m := &Manager{
 		sessions:    make(map[string]*Session),
 		processes:   make(map[string]*runningProcess),
 		subscribers: make(map[string][]chan struct{}),
-		onFirstResponse: func(beanID string, messages []Message) {
-			if beanID != "wt-test" {
-				t.Errorf("expected beanID 'wt-test', got %q", beanID)
-			}
-			if len(messages) < 2 {
-				t.Errorf("expected at least 2 messages, got %d", len(messages))
-			}
-			callbackCalled <- struct{}{}
+		onFirstUserMessage: func(beanID string, message string) {
+			callbackCalled <- message
 		},
 	}
 
-	session := &Session{
-		ID:           "wt-test",
-		AgentType:    "claude",
-		Status:       StatusRunning,
-		Messages:     []Message{{Role: RoleUser, Content: "Fix the auth bug"}},
-		streamingIdx: -1,
-	}
-	m.sessions["wt-test"] = session
+	// SendMessage will try to spawn a process, which will fail since there's no
+	// claude binary in test. But the callback should fire before spawning.
+	_ = m.SendMessage("wt-test", "/tmp", "Fix the auth bug", nil)
 
-	// isFirstSpawn=true should trigger the callback
-	m.readOutput("wt-test", strings.NewReader(lines), "", true)
-
-	// The callback runs in a goroutine — wait for it with a timeout
 	select {
-	case <-callbackCalled:
-		// success
+	case msg := <-callbackCalled:
+		if msg != "Fix the auth bug" {
+			t.Errorf("expected message 'Fix the auth bug', got %q", msg)
+		}
 	case <-time.After(time.Second):
-		t.Fatal("onFirstResponse callback was not called within timeout")
+		t.Fatal("onFirstUserMessage callback was not called within timeout")
 	}
 }
 
-func TestReadOutputNoCallbackOnSubsequentSpawn(t *testing.T) {
-	lines := strings.Join([]string{
-		`{"type":"content_block_start","content_block":{"type":"text","text":""}}`,
-		`{"type":"content_block_delta","delta":{"type":"text_delta","text":"Resumed."}}`,
-		`{"type":"result","session_id":"sess-2"}`,
-	}, "\n")
-
+func TestSendMessageNoCallbackOnExistingSession(t *testing.T) {
+	// Verify the callback does NOT fire when the session already exists.
 	callbackCalled := false
 
 	m := &Manager{
 		sessions:    make(map[string]*Session),
 		processes:   make(map[string]*runningProcess),
 		subscribers: make(map[string][]chan struct{}),
-		onFirstResponse: func(beanID string, messages []Message) {
+		onFirstUserMessage: func(beanID string, message string) {
 			callbackCalled = true
 		},
 	}
 
-	session := &Session{
+	// Pre-create a session
+	m.sessions["wt-test2"] = &Session{
 		ID:           "wt-test2",
 		AgentType:    "claude",
-		Status:       StatusRunning,
-		Messages:     []Message{{Role: RoleUser, Content: "Continue"}},
+		Status:       StatusIdle,
+		Messages:     []Message{{Role: RoleUser, Content: "Previous message"}},
 		streamingIdx: -1,
 	}
-	m.sessions["wt-test2"] = session
 
-	// isFirstSpawn=false should NOT trigger the callback
-	m.readOutput("wt-test2", strings.NewReader(lines), "", false)
+	_ = m.SendMessage("wt-test2", "/tmp", "Continue working", nil)
+
+	// Give the goroutine a moment to fire (it shouldn't)
+	time.Sleep(50 * time.Millisecond)
 
 	if callbackCalled {
-		t.Error("onFirstResponse should not be called when isFirstSpawn=false")
+		t.Error("onFirstUserMessage should not be called for existing sessions")
 	}
 }

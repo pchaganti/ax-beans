@@ -10,10 +10,10 @@ import (
 // for the given beanID. Return "" to skip injection.
 type ContextProvider func(beanID string) string
 
-// OnFirstResponseFunc is called after an agent session completes its first turn.
+// OnFirstUserMessageFunc is called when the first user message is sent to a new session.
 // Receives the beanID (which is the worktree ID for workspace agents) and
-// the conversation messages so far.
-type OnFirstResponseFunc func(beanID string, messages []Message)
+// the user's message text.
+type OnFirstUserMessageFunc func(beanID string, message string)
 
 // DefaultMode controls the initial mode for new agent sessions.
 type DefaultMode string
@@ -31,7 +31,7 @@ type Manager struct {
 	processes             map[string]*runningProcess
 	store                 *store // JSONL persistence (nil if no beansDir)
 	contextProvider       ContextProvider
-	onFirstResponse       OnFirstResponseFunc
+	onFirstUserMessage    OnFirstUserMessageFunc
 	defaultMode DefaultMode
 
 	subMu       sync.Mutex
@@ -70,10 +70,10 @@ func NewManager(beansDir string, contextProvider ContextProvider, defaultMode ..
 	return m
 }
 
-// SetOnFirstResponse registers a callback that fires after an agent's first turn completes.
-// Must be called during initialization, before any messages are sent.
-func (m *Manager) SetOnFirstResponse(fn OnFirstResponseFunc) {
-	m.onFirstResponse = fn
+// SetOnFirstUserMessage registers a callback that fires when the first user message
+// is sent to a new session. Must be called during initialization, before any messages are sent.
+func (m *Manager) SetOnFirstUserMessage(fn OnFirstUserMessageFunc) {
+	m.onFirstUserMessage = fn
 }
 
 // GetSession returns a snapshot of the session for the given beanID, or nil.
@@ -170,6 +170,11 @@ func (m *Manager) SendMessage(beanID, workDir, message string, images []ImageUpl
 
 	// Notify subscribers that we have a new user message + running status
 	m.notify(beanID)
+
+	// Fire onFirstUserMessage callback when this is a brand new session
+	if !ok && m.onFirstUserMessage != nil {
+		go m.onFirstUserMessage(beanID, message)
+	}
 
 	if hasProc && proc != nil {
 		// Send message to existing process via stdin — Claude Code's stream-json
