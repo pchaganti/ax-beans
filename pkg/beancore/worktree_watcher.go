@@ -315,6 +315,31 @@ func (c *Core) handleWorktreeChanges(wt *worktreeWatcher, changes map[string]fsn
 			continue
 		}
 
+		// Compare against the main repo's version on disk.
+		// If they match (e.g. after a rebase), don't link — this bean
+		// isn't actually modified in the worktree.
+		mainPath := c.findMainBeanFile(newBean.ID)
+		if mainPath != "" {
+			mainBean, mainErr := c.loadBeanFrom(mainPath, c.root)
+			if mainErr == nil && mainBean.ETag() == newBean.ETag() {
+				// Worktree version matches main — clear any stale link
+				if _, wasLinked := c.worktreeLinks[newBean.ID]; wasLinked {
+					c.beans[newBean.ID] = mainBean
+					delete(c.dirty, newBean.ID)
+					delete(c.worktreeLinks, newBean.ID)
+					if c.searchIndex != nil {
+						_ = c.searchIndex.IndexBean(mainBean)
+					}
+					events = append(events, BeanEvent{
+						Type:   EventUpdated,
+						Bean:   mainBean,
+						BeanID: newBean.ID,
+					})
+				}
+				continue
+			}
+		}
+
 		_, existed := c.beans[newBean.ID]
 		c.beans[newBean.ID] = newBean
 		c.dirty[newBean.ID] = true // Mark as dirty — came from worktree, not persisted to main

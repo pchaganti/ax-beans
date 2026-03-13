@@ -338,6 +338,76 @@ Working on this in a worktree.
 		}
 	})
 
+	t.Run("rebase with identical beans does not link them", func(t *testing.T) {
+		core, _ := setupTestCore(t)
+
+		// Create beans in main with explicit content (stable timestamps)
+		bean1Content := "---\ntitle: Bean One\nstatus: todo\ntype: task\ncreated_at: 2025-01-01T00:00:00Z\nupdated_at: 2025-01-01T00:00:00Z\n---\n"
+		os.WriteFile(filepath.Join(core.Root(), "rebase-1--bean-one.md"), []byte(bean1Content), 0644)
+		bean2Content := "---\ntitle: Bean Two\nstatus: todo\ntype: task\ncreated_at: 2025-01-01T00:00:00Z\nupdated_at: 2025-01-01T00:00:00Z\n---\n"
+		os.WriteFile(filepath.Join(core.Root(), "rebase-2--bean-two.md"), []byte(bean2Content), 0644)
+		// Reload so core picks them up
+		core.Load()
+
+		// Start watching so fsnotify picks up changes
+		if err := core.StartWatching(); err != nil {
+			t.Fatalf("StartWatching() error = %v", err)
+		}
+		defer core.Unwatch()
+
+		// Create a worktree with one modified bean and one identical to main
+		wtDir := t.TempDir()
+		wtBeansDir := filepath.Join(wtDir, BeansDir)
+		os.MkdirAll(wtBeansDir, 0755)
+
+		// Modified bean — should be linked
+		modifiedContent := "---\ntitle: Bean One Modified\nstatus: in-progress\ntype: task\ncreated_at: 2025-01-01T00:00:00Z\nupdated_at: 2025-01-01T00:00:00Z\n---\n"
+		os.WriteFile(filepath.Join(wtBeansDir, "rebase-1--bean-one.md"), []byte(modifiedContent), 0644)
+
+		// Identical content — should NOT be linked (simulates rebase pulling in main's version)
+		os.WriteFile(filepath.Join(wtBeansDir, "rebase-2--bean-two.md"), []byte(bean2Content), 0644)
+
+		if err := core.WatchWorktreeBeans(wtDir); err != nil {
+			t.Fatalf("WatchWorktreeBeans() error = %v", err)
+		}
+		defer core.UnwatchWorktreeBeans(wtDir)
+
+		// Modified bean should be linked
+		if got := core.WorktreeForBean("rebase-1"); got != wtDir {
+			t.Errorf("WorktreeForBean(rebase-1) = %q, want %q", got, wtDir)
+		}
+
+		// Identical bean should NOT be linked
+		if got := core.WorktreeForBean("rebase-2"); got != "" {
+			t.Errorf("WorktreeForBean(rebase-2) = %q, want empty (identical to main)", got)
+		}
+
+		// Now simulate a rebase: write the main version of rebase-1 into the worktree
+		// (i.e., the modification was reverted by the rebase)
+		events, unsub := core.Subscribe()
+		defer unsub()
+
+		os.WriteFile(filepath.Join(wtBeansDir, "rebase-1--bean-one.md"), []byte(bean1Content), 0644)
+
+		// Wait for the watcher to process the change
+		select {
+		case <-events:
+			// Event received
+		case <-time.After(2 * time.Second):
+			t.Fatal("timed out waiting for rebase event")
+		}
+
+		// After the "rebase", rebase-1 should no longer be linked
+		if got := core.WorktreeForBean("rebase-1"); got != "" {
+			t.Errorf("WorktreeForBean(rebase-1) after rebase = %q, want empty", got)
+		}
+
+		// And should no longer be dirty
+		if core.IsDirty("rebase-1") {
+			t.Error("rebase-1 should not be dirty after reverting to main version")
+		}
+	})
+
 	t.Run("UnwatchAllWorktrees stops all watchers", func(t *testing.T) {
 		core, _ := setupTestCore(t)
 
