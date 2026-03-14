@@ -23,7 +23,7 @@ a,
 }
 
 .btn-primary {
-  @apply h-8 cursor-pointer whitespace-nowrap rounded-md bg-accent px-3 text-sm font-medium text-accent-text transition-opacity hover:opacity-90;
+  @apply h-8 cursor-pointer rounded-md bg-accent px-3 text-sm font-medium whitespace-nowrap text-accent-text transition-opacity hover:opacity-90;
 }
 
 .btn-icon {
@@ -31,7 +31,7 @@ a,
 }
 
 .btn-tab {
-  @apply h-8 cursor-pointer whitespace-nowrap border px-3 py-1 text-sm font-medium transition-colors;
+  @apply h-8 cursor-pointer border px-3 py-1 text-sm font-medium whitespace-nowrap transition-colors;
 }
 
 .btn-tab-sm {
@@ -39,7 +39,7 @@ a,
 }
 
 .btn-toggle {
-  @apply flex h-8 cursor-pointer items-center gap-1.5 whitespace-nowrap rounded border px-3 text-sm font-medium transition-[color,background-color,border-color,opacity] duration-200;
+  @apply flex h-8 cursor-pointer items-center gap-1.5 rounded border px-3 text-sm font-medium whitespace-nowrap transition-[color,background-color,border-color,opacity] duration-200;
 }
 
 .btn-toggle:disabled {
@@ -72,7 +72,11 @@ a,
 
 @keyframes loader-dots {
   100% {
-    background-position: 100% 0, 100% 100%, 0 100%, 0 0;
+    background-position:
+      100% 0,
+      100% 100%,
+      0 100%,
+      0 0;
   }
 }
 
@@ -300,7 +304,7 @@ tr.diff-hunk td {
   --th-text: var(--color-gray-900);
   --th-text-muted: var(--color-gray-500);
   --th-text-faint: var(--color-gray-400);
-  --th-accent: var(--color-blue-400);
+  --th-accent: var(--color-gray-400);
   --th-accent-text: var(--color-white);
   --th-danger: var(--color-red-600);
   --th-warning: var(--color-amber-600);
@@ -350,19 +354,19 @@ tr.diff-hunk td {
 /* ── Dark palette ────────────────────────────── */
 @media (prefers-color-scheme: dark) {
   :root {
-    --th-surface: var(--color-mauve-900);
-    --th-surface-alt: var(--color-mauve-800);
-    --th-surface-dim: var(--color-mauve-700);
-    --th-border: var(--color-mauve-700);
-    --th-text: var(--color-mauve-300);
-    --th-text-muted: var(--color-mauve-400);
-    --th-text-faint: var(--color-mauve-500);
-    --th-accent: var(--color-mauve-400);
-    --th-accent-text: var(--color-mauve-900);
-    --th-danger: var(--color-red-500);
-    --th-warning: var(--color-amber-500);
-    --th-success: var(--color-green-500);
-    --th-info: var(--color-blue-400);
+    --th-surface: var(--color-stone-900);
+    --th-surface-alt: var(--color-stone-800);
+    --th-surface-dim: var(--color-stone-700);
+    --th-border: var(--color-stone-700);
+    --th-text: var(--color-stone-300);
+    --th-text-muted: var(--color-stone-400);
+    --th-text-faint: var(--color-stone-500);
+    --th-accent: var(--color-stone-400);
+    --th-accent-text: var(--color-stone-900);
+    --th-danger: var(--color-red-600);
+    --th-warning: var(--color-amber-600);
+    --th-success: var(--color-green-600);
+    --th-info: var(--color-blue-600);
 
     --th-status-draft-bg: var(--color-zinc-700);
     --th-status-draft-text: var(--color-zinc-400);
@@ -398,7 +402,7 @@ tr.diff-hunk td {
     --th-md-h3: var(--color-slate-400);
     --th-md-h456: var(--color-slate-400);
     --th-md-h1-border: var(--color-zinc-600);
-    --th-md-code-bg: var(--color-mauve-700);
+    --th-md-code-bg: var(--color-stone-700);
   }
 }
 
