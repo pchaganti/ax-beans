@@ -22,6 +22,10 @@ a,
   @apply flex h-14 shrink-0 items-center border-b border-border p-3;
 }
 
+.pane-toolbar {
+  @apply flex shrink-0 items-center border-b border-border bg-surface-alt px-4 py-2 text-xs font-semibold text-text-muted;
+}
+
 .btn-primary {
   @apply h-8 cursor-pointer rounded-md bg-accent px-3 text-sm font-medium whitespace-nowrap text-accent-text transition-opacity hover:opacity-90;
 }

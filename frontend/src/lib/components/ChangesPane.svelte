@@ -3,6 +3,7 @@
   import { changesStore, type FileChange } from '$lib/changes.svelte';
   import { client } from '$lib/graphqlClient';
   import { configStore } from '$lib/config.svelte';
+  import { ui } from '$lib/uiState.svelte';
   import { MAIN_WORKSPACE_ID } from '$lib/worktrees.svelte';
 
   import SplitPane from '$lib/components/SplitPane.svelte';
@@ -421,6 +422,11 @@
 {/snippet}
 
 <div class="flex h-full flex-col bg-surface">
+  <div class="pane-toolbar">
+    <span>Changes</span>
+    <div class="flex-1"></div>
+    <button onclick={() => ui.toggleChanges()} class="btn-icon" title="Close"> &#x2715; </button>
+  </div>
   {#if isWorktree && branchStatus.commitsBehind > 0}
     {@render branchStatusBar()}
   {/if}

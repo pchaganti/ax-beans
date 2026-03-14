@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { ui } from '$lib/uiState.svelte';
   import { Terminal } from '@xterm/xterm';
   import { FitAddon } from '@xterm/addon-fit';
   import { WebLinksAddon } from '@xterm/addon-web-links';
@@ -176,5 +177,10 @@
 </script>
 
 <div class="flex h-full min-h-0 flex-col bg-surface">
+  <div class="pane-toolbar">
+    <span>Terminal</span>
+    <div class="flex-1"></div>
+    <button onclick={() => ui.toggleTerminal()} class="btn-icon" title="Close"> &#x2715; </button>
+  </div>
   <div class="min-h-0 flex-1 p-2" bind:this={terminalEl}></div>
 </div>
