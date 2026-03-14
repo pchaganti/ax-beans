@@ -177,7 +177,7 @@
       onpaste={handlePaste}
       placeholder="Send a message..."
       rows={1}
-      class="max-h-48 resize-none rounded bg-transparent px-3 py-2 text-sm
+      class="max-h-48 resize-none rounded bg-transparent px-3 py-2
 				text-text [field-sizing:content] placeholder:text-text-faint
 				focus:outline-none"
     ></textarea>

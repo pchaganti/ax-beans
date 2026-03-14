@@ -50,7 +50,7 @@
   }
 </script>
 
-<div class="flex h-full flex-col bg-surface text-sm">
+<div class="flex h-full flex-col bg-surface">
   <AgentMessages {messages} {isRunning} {activityLabel} {subagentActivities} {setupRunning} />
 
   <!-- Error banner -->

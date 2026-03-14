@@ -105,7 +105,7 @@
     onscroll={handleMessagesScroll}
   >
     {#if setupRunning}
-      <div class="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-muted animate-pulse">
+      <div class="rounded-lg border border-border bg-surface px-3 py-2 text-text-muted animate-pulse">
         <p>Workspace setup is running...</p>
       </div>
     {/if}
@@ -136,7 +136,7 @@
             </div>
           </div>
         {:else if msg.role === 'INFO'}
-          <div class="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-text-muted">
+          <div class="rounded-lg border border-border bg-surface px-3 py-2 text-text-muted">
             <p class="whitespace-pre-wrap">{msg.content}</p>
           </div>
         {:else if msg.role === 'TOOL'}
