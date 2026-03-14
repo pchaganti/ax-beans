@@ -396,32 +396,27 @@
 {/snippet}
 
 {#snippet branchStatusBar()}
-  <div class="flex flex-col gap-2 border-b border-border p-3">
-    {#if branchStatus.commitsBehind > 0}
-      <div class="flex items-center justify-between gap-2">
-        <span class="flex items-center gap-1.5 text-text">
-          {branchStatus.commitsBehind} commit{branchStatus.commitsBehind === 1 ? '' : 's'} behind
-          {#if branchStatus.hasConflicts}
-            <span class="text-text-muted">(merge conflicts)</span>
-          {/if}
-        </span>
-        <button
-          class="btn-toggle btn-toggle-inactive cursor-pointer"
-          onclick={requestRebase}
-          disabled={rebaseRequested}
-          title="Ask the agent to rebase this branch against main"
-        >
-          {#if rebaseRequested}
-            Rebase requested
-          {:else if branchStatus.hasConflicts}
-            Resolve Conflicts
-          {:else}
-            Rebase
-          {/if}
-        </button>
-      </div>
-    {/if}
-
+  <div class="flex items-center gap-2 border-b border-border p-3">
+    <span class="min-w-0 truncate text-text">
+      {branchStatus.commitsBehind} commit{branchStatus.commitsBehind === 1 ? '' : 's'} behind
+      {#if branchStatus.hasConflicts}
+        <span class="text-text-muted">(merge conflicts)</span>
+      {/if}
+    </span>
+    <button
+      class="btn-toggle btn-toggle-inactive ml-auto shrink-0 cursor-pointer"
+      onclick={requestRebase}
+      disabled={rebaseRequested}
+      title="Ask the agent to rebase this branch against main"
+    >
+      {#if rebaseRequested}
+        Rebase requested
+      {:else if branchStatus.hasConflicts}
+        Resolve Conflicts
+      {:else}
+        Rebase
+      {/if}
+    </button>
   </div>
 {/snippet}
 
