@@ -210,11 +210,11 @@
                     ui.navigateTo(item.id);
                   }}
                   class={[
-                    'flex min-w-0 cursor-pointer items-start gap-1.5 rounded-xs border-l-2 px-2 py-1 text-left transition-colors hover:bg-surface-alt',
+                    'flex min-w-0 cursor-pointer items-baseline gap-1.5 rounded-xs border-l-2 px-2 py-1 text-left transition-colors hover:bg-surface-alt',
                     typeBorders[wtBean.type] ?? 'border-l-type-task-border'
                   ]}
                 >
-                  <code class="mt-0.5 shrink-0 text-[9px] leading-none text-text-faint">{wtBean.id.slice(-4)}</code>
+                  <code class="shrink-0 text-[9px] text-text-faint">{wtBean.id.slice(-4)}</code>
                   <span class="min-w-0 flex-1 text-xs text-text-muted">{wtBean.title}</span>
                 </button>
               {/each}
