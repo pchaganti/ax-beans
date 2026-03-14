@@ -8,13 +8,13 @@ import (
 	"time"
 )
 
-const describePrompt = `You are given the first message sent to an AI agent in a software development workspace. Summarize what this workspace will be doing in 3-8 words. Be specific and concrete — mention the actual feature, bug, or task. Output ONLY the summary, nothing else.
+const describePrompt = `You are given the first message a user sent to an AI coding agent. Summarize what the user asked for in 3-8 words. Be specific and concrete — mention the actual feature, bug, or task. Output ONLY the summary, nothing else.
 
 Examples of good summaries:
 - "Fix auth token refresh bug"
 - "Add dark mode to settings"
 - "Refactor GraphQL subscription resolvers"
-- "Implement workspace description generation"
+- "Workspace description generation"
 
 User message:`
 
