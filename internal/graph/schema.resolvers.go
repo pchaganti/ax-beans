@@ -748,7 +748,7 @@ func (r *mutationResolver) ExecuteAgentAction(ctx context.Context, beanID string
 		}
 	}
 
-	actCtx := actionContext{WorktreeID: beanID, WorkDir: workDir}
+	actCtx := actionContext{WorktreeID: beanID, WorkDir: workDir, MainRepoPath: r.ProjectRoot}
 	if err := r.AgentMgr.SendMessage(beanID, workDir, action.PromptFunc(actCtx), nil); err != nil {
 		return false, err
 	}

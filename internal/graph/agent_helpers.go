@@ -152,6 +152,7 @@ type actionContext struct {
 	HasChanges         bool   // uncommitted changes or untracked files
 	HasNewCommits      bool   // commits ahead of the base branch
 	MainRepoHasChanges bool   // main repo has uncommitted changes
+	MainRepoPath       string // absolute path to the main repo working directory
 }
 
 // agentActionDef defines a single agent action with its metadata and prompt.
@@ -210,20 +211,20 @@ var agentActions = []agentActionDef{
 		ID:          "integrate",
 		Label:       "Integrate",
 		Description: "Commit, complete any associated beans, and squash-merge into main",
-		PromptFunc: func(_ actionContext) string {
-			return `Squash-merge this worktree's work into main. All commits from this branch must be combined into a single commit on main. Follow these steps in order:
+		PromptFunc: func(ctx actionContext) string {
+			return fmt.Sprintf(`Squash-merge this worktree's work into main. All commits from this branch must be combined into a single commit on main. Follow these steps in order:
 
 1. If there are associated beans, mark them as completed.
 2. If there are uncommitted changes, create a commit (following the usual commit guidelines).
-3. Squash-merge onto main atomically. Do NOT switch to or modify main's working directory (another agent may be working there). Do everything from this worktree:
-   a. Record main's current HEAD: MAIN_SHA=$(git rev-parse main)
-   b. Rebase onto main to incorporate any prior integrations: git rebase main
-   c. Squash all commits into one: git reset --soft main && git commit -m "<your message>"
+3. Squash-merge onto main:
+   a. Rebase onto main to incorporate any prior integrations: git rebase main
+   b. Squash all commits into one: git reset --soft main && git commit -m "<your message>"
       - Write a single, well-crafted conventional commit message that summarizes all the work done in this branch. Include relevant bean IDs.
-   d. Atomically advance main using compare-and-swap (fails if another integration landed in the meantime):
-      git update-ref refs/heads/main HEAD $MAIN_SHA
-   e. If update-ref fails (main moved), go back to step (a) and retry.
-4. Reset this branch to main so it doesn't appear to diverge: git reset --hard main`
+   c. Record the squashed commit SHA: SQUASH_SHA=$(git rev-parse HEAD)
+   d. Fast-forward main to the squashed commit (this updates main's ref, index, AND working tree):
+      git -C %s merge --ff-only $SQUASH_SHA
+   e. If the merge fails (e.g. main moved), go back to step (a) and retry.
+4. Reset this branch to main so it doesn't appear to diverge: git reset --hard main`, ctx.MainRepoPath)
 		},
 		Visible: func(ctx actionContext) bool {
 			return ctx.HasChanges || ctx.HasNewCommits
