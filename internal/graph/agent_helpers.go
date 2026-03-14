@@ -215,12 +215,14 @@ var agentActions = []agentActionDef{
 
 1. If there are associated beans, mark them as completed.
 2. If there are uncommitted changes, create a commit (following the usual commit guidelines).
-3. Squash-merge onto main — combine ALL commits from this branch into ONE commit on main. Do NOT switch to or modify main's working directory (another agent may be working there). Do this from the worktree:
-   - Ensure the main repo accepts pushes to checked-out branches: git -C "$(git rev-parse --git-common-dir)/.." config receive.denyCurrentBranch updateInstead
-   - Create the squash commit: git diff main...HEAD | git -C "$(git rev-parse --git-common-dir)/.." apply --index
-   - Write a single, well-crafted conventional commit message that summarizes all the work done in this branch. Include relevant bean IDs.
-   - Commit directly on main: git -C "$(git rev-parse --git-common-dir)/.." commit -m "<your message>"
-   - If the apply fails due to conflicts with work another agent integrated first, rebase onto main first (git rebase main), then retry the squash.
+3. Squash-merge onto main atomically. Do NOT switch to or modify main's working directory (another agent may be working there). Do everything from this worktree:
+   a. Record main's current HEAD: MAIN_SHA=$(git rev-parse main)
+   b. Rebase onto main to incorporate any prior integrations: git rebase main
+   c. Squash all commits into one: git reset --soft main && git commit -m "<your message>"
+      - Write a single, well-crafted conventional commit message that summarizes all the work done in this branch. Include relevant bean IDs.
+   d. Atomically advance main using compare-and-swap (fails if another integration landed in the meantime):
+      git update-ref refs/heads/main HEAD $MAIN_SHA
+   e. If update-ref fails (main moved), go back to step (a) and retry.
 4. Reset this branch to main so it doesn't appear to diverge: git reset --hard main`
 		},
 		Visible: func(ctx actionContext) bool {
