@@ -259,6 +259,32 @@ func TestRemove(t *testing.T) {
 	}
 }
 
+func TestRemoveDirtyWorktree(t *testing.T) {
+	repoDir, beansDir := initTestRepo(t)
+	mgr := NewManager(repoDir, beansDir, "", "")
+
+	wt, err := mgr.Create("dirty-wt")
+	if err != nil {
+		t.Fatalf("Create: %v", err)
+	}
+
+	// Create an uncommitted change in the worktree
+	if err := os.WriteFile(filepath.Join(wt.Path, "dirty.txt"), []byte("dirty"), 0644); err != nil {
+		t.Fatalf("WriteFile: %v", err)
+	}
+	gitRun(t, wt.Path, "add", "dirty.txt")
+
+	// Remove should succeed even with uncommitted changes (uses --force)
+	if err := mgr.Remove(wt.ID); err != nil {
+		t.Fatalf("Remove dirty worktree: %v", err)
+	}
+
+	// Directory should be gone
+	if _, err := os.Stat(wt.Path); !os.IsNotExist(err) {
+		t.Errorf("worktree directory still exists after remove")
+	}
+}
+
 func TestRemoveStaleWorktree(t *testing.T) {
 	repoDir, beansDir := initTestRepo(t)
 	mgr := NewManager(repoDir, beansDir, "", "")

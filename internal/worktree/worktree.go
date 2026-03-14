@@ -478,7 +478,7 @@ func (m *Manager) Remove(id string) error {
 		return fmt.Errorf("worktree %s not found: %w", id, err)
 	}
 
-	cmd := exec.Command("git", "worktree", "remove", worktreePath)
+	cmd := exec.Command("git", "worktree", "remove", "--force", worktreePath)
 	cmd.Dir = m.repoRoot
 	if out, err := cmd.CombinedOutput(); err != nil {
 		outStr := strings.TrimSpace(string(out))
