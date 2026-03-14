@@ -4,6 +4,7 @@
   import { ui } from '$lib/uiState.svelte';
   import { renderMarkdown } from '$lib/markdown';
   import { fade } from 'svelte/transition';
+  import { decryptText } from '$lib/actions/decryptText';
 
   interface Props {
     messages: AgentMessage[];
@@ -14,6 +15,10 @@
   }
 
   let { messages, isRunning, activityLabel, subagentActivities, setupRunning = false }: Props = $props();
+
+  // Messages present at mount time are shown immediately (no animation).
+  // Only messages arriving after mount get the decrypt effect.
+  const initialMessageCount = messages.length;
 
   let messagesEl: HTMLDivElement | undefined = $state();
   let renderedMessages = $state<Map<string, string>>(new Map());
@@ -137,7 +142,7 @@
           </div>
         {:else if msg.role === 'INFO'}
           <div class="rounded-lg border border-border bg-surface px-3 py-2 text-text-muted">
-            <p class="whitespace-pre-wrap">{msg.content}</p>
+            <p class="whitespace-pre-wrap" use:decryptText={{ text: msg.content, immediate: i < initialMessageCount }}></p>
           </div>
         {:else if msg.role === 'TOOL'}
           <div class="flex gap-2 text-text-faint">
@@ -149,10 +154,10 @@
                   onclick={() => toggleDiff(i)}
                 >
                   <span class="shrink-0 select-none">{expandedDiffs.has(i) ? '▾' : '▸'}</span>
-                  <span>{msg.content}</span>
+                  <span use:decryptText={{ text: msg.content, immediate: i < initialMessageCount }}></span>
                 </button>
               {:else}
-                <span>{msg.content}</span>
+                <span use:decryptText={{ text: msg.content, immediate: i < initialMessageCount }}></span>
               {/if}
               {#if msg.diff && expandedDiffs.has(i)}
                 <pre class="mt-1 max-h-64 overflow-auto rounded border border-border bg-surface-alt p-2 font-mono leading-relaxed">{#each msg.diff.split('\n') as line}<span class={diffLineClass(line)}>{line}
@@ -175,7 +180,7 @@
         {:else if isRunning}
           <div class="flex gap-2 text-text-muted">
             <span class="shrink-0 select-none">&middot;</span>
-            <span class="animate-pulse">{activityLabel}</span>
+            <span use:decryptText={activityLabel}></span>
           </div>
         {/if}
       {/each}
@@ -183,16 +188,14 @@
       {#if isRunning && subagentActivities.length === 0 && (messages.length === 0 || messages[messages.length - 1].role === 'USER')}
         <div class="flex gap-2 text-text-muted">
           <span class="shrink-0 select-none">&middot;</span>
-          <span class="animate-pulse">{activityLabel}</span>
+          <span use:decryptText={activityLabel}></span>
         </div>
       {/if}
 
       {#each subagentActivities as activity (activity.taskId)}
+        {@const activityText = `#${activity.index} ${activity.description || 'Subagent'}${activity.currentTool ? ` — ${activity.currentTool}` : ''}`}
         <div class="text-text-faint">
-          <span class="animate-pulse">
-            <span class="text-text-muted">#{activity.index}</span>
-            {activity.description || 'Subagent'}{activity.currentTool ? ` — ${activity.currentTool}` : ''}
-          </span>
+          <span use:decryptText={activityText}></span>
         </div>
       {/each}
     {/if}

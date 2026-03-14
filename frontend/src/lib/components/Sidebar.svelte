@@ -9,6 +9,7 @@
   import { client } from '$lib/graphqlClient';
   import { ui } from '$lib/uiState.svelte';
   import { typeBorders } from '$lib/styles';
+  import { decryptText } from '$lib/actions/decryptText';
   import ConfirmModal from './ConfirmModal.svelte';
 
   interface WorkspaceItem {
@@ -38,6 +39,11 @@
       settingUp: wt.setupStatus === 'RUNNING'
     }))
   ]);
+
+  // Items present at mount time are shown immediately (no animation).
+  // Only items appearing after mount get the decrypt effect.
+  const initialWorkspaceIds = new Set(worktreeStore.worktrees.map((wt) => wt.id));
+  const initialBeanIds = new Set(beansStore.all.filter((b) => b.worktreeId).map((b) => b.id));
 
   // Poll for uncommitted changes in the main repo and worktree integration readiness
   let mainHasChanges = $state(false);
@@ -178,7 +184,7 @@
               {#if item.settingUp}
                 <span class="block text-xs font-normal text-text-faint animate-pulse">Setting up...</span>
               {:else if item.description}
-                <span class="block text-xs font-normal text-text-faint">{item.description}</span>
+                <span class="block text-xs font-normal text-text-faint" use:decryptText={{ text: item.description, immediate: initialWorkspaceIds.has(item.id) }}></span>
               {/if}
             </div>
             <div class="relative ml-auto h-4 w-4 shrink-0 self-start mt-0.5">
@@ -226,7 +232,7 @@
                     typeBorders[wtBean.type] ?? 'border-l-type-task-border'
                   ]}
                 >
-                  <span class="min-w-0 flex-1 text-xs text-text-muted">{wtBean.title}</span>
+                  <span class="min-w-0 flex-1 text-xs text-text-muted" use:decryptText={{ text: wtBean.title, immediate: initialBeanIds.has(wtBean.id) }}></span>
                 </button>
               {/each}
             </div>
