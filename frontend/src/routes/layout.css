@@ -217,18 +217,8 @@ a,
 }
 
 /* Line numbers via CSS counter */
-.prose pre.shiki code {
-  counter-reset: line;
-}
-
 .prose pre.shiki .line {
   @apply inline-block w-full;
-}
-
-.prose pre.shiki .line::before {
-  counter-increment: line;
-  content: counter(line);
-  @apply mr-4 inline-block w-8 text-right text-text-faint select-none;
 }
 
 .prose :not(pre) > code {
@@ -402,7 +392,7 @@ tr.diff-hunk td {
     --th-md-h3: var(--color-slate-400);
     --th-md-h456: var(--color-slate-400);
     --th-md-h1-border: var(--color-zinc-600);
-    --th-md-code-bg: var(--color-stone-700);
+    --th-md-code-bg: var(--color-stone-800);
   }
 }
 
