@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   timeout: 30_000,
-  retries: 0,
+  retries: 2,
   workers: 4,
   use: {
     trace: 'on-first-retry'

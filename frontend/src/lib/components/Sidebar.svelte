@@ -68,8 +68,11 @@
   let confirmingRemoveId = $state<string | null>(null);
   let confirmingStatus = $state<WorktreeStatus | null>(null);
 
-  function promptDestroy(id: string) {
-    confirmingStatus = worktreeStatuses.get(id) ?? null;
+  async function promptDestroy(id: string) {
+    // Fetch fresh status so warnings are accurate regardless of poll timing
+    const result = await client.query(WORKTREE_STATUS_QUERY, {}).toPromise();
+    const fresh = (result.data?.worktrees ?? []).find((wt: { id: string }) => wt.id === id);
+    confirmingStatus = fresh ? { hasChanges: fresh.hasChanges, hasUnmergedCommits: fresh.hasUnmergedCommits } : null;
     confirmingRemoveId = id;
   }
 
@@ -181,7 +184,17 @@
               {:else if item.id === MAIN_WORKSPACE_ID && mainHasChanges}
                 <span class="icon-[uil--exclamation-triangle] absolute inset-0 block size-4 text-warning" title="Uncommitted changes"></span>
               {:else if item.id !== MAIN_WORKSPACE_ID && readyWorktreeIds.has(item.id)}
-                <span class="icon-[uil--check] absolute inset-0 block size-4 text-success" title="Ready to integrate"></span>
+                <span class="icon-[uil--check] absolute inset-0 block size-4 text-success group-hover:hidden" title="Ready to integrate"></span>
+                <button
+                  onclick={(e) => {
+                    e.stopPropagation();
+                    promptDestroy(item.id);
+                  }}
+                  class="absolute inset-0 hidden cursor-pointer items-center justify-center rounded text-text-faint transition-opacity hover:text-danger group-hover:flex"
+                  aria-label="Destroy worktree"
+                >
+                  <span class="icon-[uil--archive] block size-3.5"></span>
+                </button>
               {:else if item.id !== MAIN_WORKSPACE_ID}
                 <button
                   onclick={(e) => {

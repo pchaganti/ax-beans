@@ -46,6 +46,10 @@ In dev, Vite proxies `/api` to the backend. In production, the Go server serves 
 
 Mutations that affect UI responsiveness (e.g., `worktreeStore.removeWorktree`, `agentChatStore.sendMessage`) apply optimistic local state updates before the mutation completes, and roll back on failure. The subscription eventually delivers the authoritative state.
 
+### Polled Data vs. On-Demand Fetches
+
+Some stores use polling intervals (e.g., worktree statuses every 3 seconds, file changes). **Polled data is fine for passive indicators but must not be trusted for user-initiated actions that depend on accurate state** (e.g., confirmation modals with warnings). When a user action needs decision-critical data, fetch fresh data on-demand before acting — don't read from the polled cache.
+
 ## Svelte
 
 - Use **Svelte 5** with runes (`$state`, `$derived`, `$props`, `$effect`, etc.). Do not use legacy Svelte 4 patterns (`export let`, `$:`, stores via `writable`/`readable`).
@@ -63,6 +67,7 @@ Mutations that affect UI responsiveness (e.g., `worktreeStore.removeWorktree`, `
 
 - **Never suppress a11y warnings with `svelte-ignore` comments.** Fix the underlying issue instead — use semantic HTML elements, add proper ARIA roles, or restructure the code to avoid the warning.
 - Use `<button>` for clickable elements, not `<span role="button">` or `<div onclick>`.
+- **Don't hide interactive elements behind state-dependent conditionals.** If a button (e.g., "Destroy worktree") is replaced entirely by a status icon via `{:else if}`, users can't reach it in that state, and e2e tests can't click it. Instead, keep both elements and use hover or layering to toggle visibility (e.g., `group-hover:hidden` on the icon, `hidden group-hover:flex` on the button).
 
 ## Styling
 
