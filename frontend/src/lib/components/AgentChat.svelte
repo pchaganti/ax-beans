@@ -41,7 +41,7 @@
     if (isRunning) thinkingPhrase = pickThinkingPhrase();
   });
   const activityLabel = $derived(systemStatus ? `${systemStatus}...` : thinkingPhrase);
-  const sessionModel = $derived(store.session?.model ?? '');
+  const sessionEffort = $derived(store.session?.effort ?? '');
   const pendingInteraction = $derived(store.session?.pendingInteraction ?? null);
   const subagentActivities = $derived(store.session?.subagentActivities ?? []);
 
@@ -84,13 +84,13 @@
     {isRunning}
     hasMessages={messages.length > 0}
     {agentMode}
-    model={sessionModel}
+    effort={sessionEffort}
     {systemStatus}
     {subagentActivities}
-    onSend={(text, images) => { internalScrollTrigger++; store.sendMessage(beanId, text, images, sessionModel || undefined); }}
+    onSend={(text, images) => { internalScrollTrigger++; store.sendMessage(beanId, text, images); }}
     onStop={() => store.stop(beanId)}
     onSetMode={setAgentMode}
-    onSetModel={(model) => store.setModel(beanId, model)}
+    onSetEffort={(effort) => store.setEffort(beanId, effort)}
     onCompact={() => store.sendMessage(beanId, '/compact')}
     onClear={() => store.clearSession(beanId)}
   />

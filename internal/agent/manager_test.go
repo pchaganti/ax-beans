@@ -804,91 +804,92 @@ func TestBuildClaudeArgs_ActOverridesPlan(t *testing.T) {
 	}
 }
 
-func TestBuildClaudeArgs_Model(t *testing.T) {
-	args := buildClaudeArgs(&Session{Model: "opus"})
+func TestBuildClaudeArgs_Effort(t *testing.T) {
+	args := buildClaudeArgs(&Session{Effort: "max"})
 	found := false
 	for i, a := range args {
-		if a == "--model" && i+1 < len(args) && args[i+1] == "opus" {
+		if a == "--effort" && i+1 < len(args) && args[i+1] == "max" {
 			found = true
 			break
 		}
 	}
 	if !found {
-		t.Errorf("expected --model opus in args, got %v", args)
+		t.Errorf("expected --effort max in args, got %v", args)
 	}
 }
 
-func TestBuildClaudeArgs_NoModel(t *testing.T) {
+func TestBuildClaudeArgs_NoEffort(t *testing.T) {
 	args := buildClaudeArgs(&Session{})
 	for _, a := range args {
-		if a == "--model" {
-			t.Errorf("expected no --model flag when model is empty, got %v", args)
+		if a == "--effort" {
+			t.Errorf("expected no --effort flag when effort is empty, got %v", args)
 		}
 	}
 }
 
-func TestSetModel_CreatesSession(t *testing.T) {
+func TestSetEffort_CreatesSession(t *testing.T) {
 	m := NewManager("", nil)
-	err := m.SetModel("test-bean", "opus")
+	err := m.SetEffort("test-bean", "max")
 	if err != nil {
-		t.Fatalf("SetModel: %v", err)
+		t.Fatalf("SetEffort: %v", err)
 	}
 
 	snap := m.GetSession("test-bean")
 	if snap == nil {
 		t.Fatal("expected session to exist")
 	}
-	if snap.Model != "opus" {
-		t.Errorf("expected model 'opus', got %q", snap.Model)
+	if snap.Effort != "max" {
+		t.Errorf("expected effort 'max', got %q", snap.Effort)
 	}
 }
 
-func TestSetModel_UpdatesExisting(t *testing.T) {
+func TestSetEffort_UpdatesExisting(t *testing.T) {
 	m := NewManager("", nil)
 	m.mu.Lock()
 	m.sessions["test-bean"] = &Session{
 		ID:           "test-bean",
-		Model:        "sonnet",
+		Effort:       "low",
 		streamingIdx: -1,
 	}
 	m.mu.Unlock()
 
-	err := m.SetModel("test-bean", "haiku")
+	err := m.SetEffort("test-bean", "max")
 	if err != nil {
-		t.Fatalf("SetModel: %v", err)
+		t.Fatalf("SetEffort: %v", err)
 	}
 
 	snap := m.GetSession("test-bean")
-	if snap.Model != "haiku" {
-		t.Errorf("expected model 'haiku', got %q", snap.Model)
+	if snap.Effort != "max" {
+		t.Errorf("expected effort 'max', got %q", snap.Effort)
 	}
 }
 
-func TestSetModel_NoopWhenSame(t *testing.T) {
+func TestSetEffort_NoopWhenSame(t *testing.T) {
 	m := NewManager("", nil)
 	m.mu.Lock()
 	m.sessions["test-bean"] = &Session{
 		ID:           "test-bean",
-		Model:        "opus",
+		Effort:       "high",
 		streamingIdx: -1,
 	}
 	m.mu.Unlock()
 
 	ch := m.Subscribe("test-bean")
 
-	// Set the same model — should be a no-op (no notification)
-	err := m.SetModel("test-bean", "opus")
+	// Set the same effort — should be a no-op (no notification)
+	err := m.SetEffort("test-bean", "high")
 	if err != nil {
-		t.Fatalf("SetModel: %v", err)
+		t.Fatalf("SetEffort: %v", err)
 	}
 
 	select {
 	case <-ch:
-		t.Error("expected no notification when model unchanged")
+		t.Error("expected no notification when effort unchanged")
 	default:
 		// expected
 	}
 }
+
 
 func TestGlobalSubscribeUnsubscribe(t *testing.T) {
 	m := NewManager("", nil)

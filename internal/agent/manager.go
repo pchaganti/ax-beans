@@ -420,9 +420,9 @@ func (m *Manager) SetActMode(beanID string, actMode bool) error {
 	return nil
 }
 
-// SetModel sets the Claude model override for a session. The new model takes
-// effect the next time a process is spawned.
-func (m *Manager) SetModel(beanID string, model string) error {
+// SetEffort sets the thinking effort level for a session, killing any running
+// process since --effort is a startup flag that requires respawning.
+func (m *Manager) SetEffort(beanID string, effort string) error {
 	m.mu.Lock()
 	session, hasSession := m.sessions[beanID]
 	if !hasSession {
@@ -430,7 +430,7 @@ func (m *Manager) SetModel(beanID string, model string) error {
 			ID:           beanID,
 			AgentType:    "claude",
 			Status:       StatusIdle,
-			Model:        model,
+			Effort:       effort,
 			streamingIdx: -1,
 		}
 		m.sessions[beanID] = session
@@ -439,13 +439,23 @@ func (m *Manager) SetModel(beanID string, model string) error {
 		return nil
 	}
 
-	if session.Model == model {
+	if session.Effort == effort {
 		m.mu.Unlock()
 		return nil
 	}
 
-	session.Model = model
+	session.Effort = effort
+
+	proc, hasProc := m.processes[beanID]
+	if hasProc {
+		delete(m.processes, beanID)
+		session.Status = StatusIdle
+	}
 	m.mu.Unlock()
+
+	if hasProc && proc != nil {
+		proc.kill()
+	}
 
 	m.notify(beanID)
 	return nil

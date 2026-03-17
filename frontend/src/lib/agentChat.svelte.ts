@@ -6,7 +6,7 @@ import {
   StopAgentDocument,
   SetAgentPlanModeDocument,
   SetAgentActModeDocument,
-  SetAgentModelDocument,
+  SetAgentEffortDocument,
   ClearAgentSessionDocument,
   type AgentSessionFieldsFragment,
   AgentMessageRole,
@@ -104,8 +104,7 @@ export class AgentChatStore {
   async sendMessage(
     beanId: string,
     message: string,
-    images?: ImageUploadInput[],
-    model?: string
+    images?: ImageUploadInput[]
   ): Promise<boolean> {
     this.sending = true;
     this.error = null;
@@ -130,8 +129,7 @@ export class AgentChatStore {
       .mutation(SendAgentMessageDocument, {
         beanId,
         message,
-        images: images ?? null,
-        model: model ?? null
+        images: images ?? null
       })
       .toPromise();
 
@@ -178,9 +176,9 @@ export class AgentChatStore {
     return true;
   }
 
-  async setModel(beanId: string, model: string): Promise<boolean> {
+  async setEffort(beanId: string, effort: string): Promise<boolean> {
     const result = await client
-      .mutation(SetAgentModelDocument, { beanId, model })
+      .mutation(SetAgentEffortDocument, { beanId, effort })
       .toPromise();
 
     if (result.error) {

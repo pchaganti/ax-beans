@@ -94,9 +94,9 @@ func agentSessionToModel(s *agent.Session) *model.AgentSession {
 		sysStatus = &s.SystemStatus
 	}
 
-	var mdl *string
-	if s.Model != "" {
-		mdl = &s.Model
+	var effort *string
+	if s.Effort != "" {
+		effort = &s.Effort
 	}
 
 	var workDir *string
@@ -120,7 +120,7 @@ func agentSessionToModel(s *agent.Session) *model.AgentSession {
 		Status:             status,
 		Messages:           msgs,
 		Error:              errPtr,
-		Model:              mdl,
+		Effort:             effort,
 		PlanMode:           s.PlanMode,
 		ActMode:            s.ActMode,
 		SystemStatus:       sysStatus,

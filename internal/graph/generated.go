@@ -80,9 +80,9 @@ type ComplexityRoot struct {
 		ActMode            func(childComplexity int) int
 		AgentType          func(childComplexity int) int
 		BeanID             func(childComplexity int) int
+		Effort             func(childComplexity int) int
 		Error              func(childComplexity int) int
 		Messages           func(childComplexity int) int
-		Model              func(childComplexity int) int
 		PendingInteraction func(childComplexity int) int
 		PlanMode           func(childComplexity int) int
 		Status             func(childComplexity int) int
@@ -166,9 +166,9 @@ type ComplexityRoot struct {
 		RemoveWorktree             func(childComplexity int, id string) int
 		SaveBean                   func(childComplexity int, id string) int
 		SaveDirtyBeans             func(childComplexity int) int
-		SendAgentMessage           func(childComplexity int, beanID string, message string, images []*model.ImageInput, model *string) int
+		SendAgentMessage           func(childComplexity int, beanID string, message string, images []*model.ImageInput) int
 		SetAgentActMode            func(childComplexity int, beanID string, actMode bool) int
-		SetAgentModel              func(childComplexity int, beanID string, model string) int
+		SetAgentEffort             func(childComplexity int, beanID string, effort string) int
 		SetAgentPendingInteraction func(childComplexity int, beanID string, typeArg model.InteractionType, planContent *string) int
 		SetAgentPlanMode           func(childComplexity int, beanID string, planMode bool) int
 		SetParent                  func(childComplexity int, id string, parentID *string, ifMatch *string) int
@@ -257,11 +257,11 @@ type MutationResolver interface {
 	WriteTerminalInput(ctx context.Context, sessionID string, data string) (bool, error)
 	CreateWorktree(ctx context.Context, name string) (*model.Worktree, error)
 	RemoveWorktree(ctx context.Context, id string) (bool, error)
-	SendAgentMessage(ctx context.Context, beanID string, message string, images []*model.ImageInput, model *string) (bool, error)
+	SendAgentMessage(ctx context.Context, beanID string, message string, images []*model.ImageInput) (bool, error)
 	StopAgent(ctx context.Context, beanID string) (bool, error)
 	SetAgentPlanMode(ctx context.Context, beanID string, planMode bool) (bool, error)
 	SetAgentActMode(ctx context.Context, beanID string, actMode bool) (bool, error)
-	SetAgentModel(ctx context.Context, beanID string, model string) (bool, error)
+	SetAgentEffort(ctx context.Context, beanID string, effort string) (bool, error)
 	SetAgentPendingInteraction(ctx context.Context, beanID string, typeArg model.InteractionType, planContent *string) (bool, error)
 	ClearAgentSession(ctx context.Context, beanID string) (bool, error)
 	ArchiveBean(ctx context.Context, id string) (bool, error)
@@ -415,6 +415,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AgentSession.BeanID(childComplexity), true
+	case "AgentSession.effort":
+		if e.complexity.AgentSession.Effort == nil {
+			break
+		}
+
+		return e.complexity.AgentSession.Effort(childComplexity), true
 	case "AgentSession.error":
 		if e.complexity.AgentSession.Error == nil {
 			break
@@ -427,12 +433,6 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.AgentSession.Messages(childComplexity), true
-	case "AgentSession.model":
-		if e.complexity.AgentSession.Model == nil {
-			break
-		}
-
-		return e.complexity.AgentSession.Model(childComplexity), true
 	case "AgentSession.pendingInteraction":
 		if e.complexity.AgentSession.PendingInteraction == nil {
 			break
@@ -907,7 +907,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SendAgentMessage(childComplexity, args["beanId"].(string), args["message"].(string), args["images"].([]*model.ImageInput), args["model"].(*string)), true
+		return e.complexity.Mutation.SendAgentMessage(childComplexity, args["beanId"].(string), args["message"].(string), args["images"].([]*model.ImageInput)), true
 	case "Mutation.setAgentActMode":
 		if e.complexity.Mutation.SetAgentActMode == nil {
 			break
@@ -919,17 +919,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Mutation.SetAgentActMode(childComplexity, args["beanId"].(string), args["actMode"].(bool)), true
-	case "Mutation.setAgentModel":
-		if e.complexity.Mutation.SetAgentModel == nil {
+	case "Mutation.setAgentEffort":
+		if e.complexity.Mutation.SetAgentEffort == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_setAgentModel_args(ctx, rawArgs)
+		args, err := ec.field_Mutation_setAgentEffort_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.SetAgentModel(childComplexity, args["beanId"].(string), args["model"].(string)), true
+		return e.complexity.Mutation.SetAgentEffort(childComplexity, args["beanId"].(string), args["effort"].(string)), true
 	case "Mutation.setAgentPendingInteraction":
 		if e.complexity.Mutation.SetAgentPendingInteraction == nil {
 			break
@@ -1698,11 +1698,6 @@ func (ec *executionContext) field_Mutation_sendAgentMessage_args(ctx context.Con
 		return nil, err
 	}
 	args["images"] = arg2
-	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "model", ec.unmarshalOString2ᚖstring)
-	if err != nil {
-		return nil, err
-	}
-	args["model"] = arg3
 	return args, nil
 }
 
@@ -1722,7 +1717,7 @@ func (ec *executionContext) field_Mutation_setAgentActMode_args(ctx context.Cont
 	return args, nil
 }
 
-func (ec *executionContext) field_Mutation_setAgentModel_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Mutation_setAgentEffort_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "beanId", ec.unmarshalNID2string)
@@ -1730,11 +1725,11 @@ func (ec *executionContext) field_Mutation_setAgentModel_args(ctx context.Contex
 		return nil, err
 	}
 	args["beanId"] = arg0
-	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "model", ec.unmarshalNString2string)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "effort", ec.unmarshalNString2string)
 	if err != nil {
 		return nil, err
 	}
-	args["model"] = arg1
+	args["effort"] = arg1
 	return args, nil
 }
 
@@ -2576,14 +2571,14 @@ func (ec *executionContext) fieldContext_AgentSession_error(_ context.Context, f
 	return fc, nil
 }
 
-func (ec *executionContext) _AgentSession_model(ctx context.Context, field graphql.CollectedField, obj *model.AgentSession) (ret graphql.Marshaler) {
+func (ec *executionContext) _AgentSession_effort(ctx context.Context, field graphql.CollectedField, obj *model.AgentSession) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_AgentSession_model,
+		ec.fieldContext_AgentSession_effort,
 		func(ctx context.Context) (any, error) {
-			return obj.Model, nil
+			return obj.Effort, nil
 		},
 		nil,
 		ec.marshalOString2ᚖstring,
@@ -2592,7 +2587,7 @@ func (ec *executionContext) _AgentSession_model(ctx context.Context, field graph
 	)
 }
 
-func (ec *executionContext) fieldContext_AgentSession_model(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AgentSession_effort(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AgentSession",
 		Field:      field,
@@ -5163,7 +5158,7 @@ func (ec *executionContext) _Mutation_sendAgentMessage(ctx context.Context, fiel
 		ec.fieldContext_Mutation_sendAgentMessage,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().SendAgentMessage(ctx, fc.Args["beanId"].(string), fc.Args["message"].(string), fc.Args["images"].([]*model.ImageInput), fc.Args["model"].(*string))
+			return ec.resolvers.Mutation().SendAgentMessage(ctx, fc.Args["beanId"].(string), fc.Args["message"].(string), fc.Args["images"].([]*model.ImageInput))
 		},
 		nil,
 		ec.marshalNBoolean2bool,
@@ -5319,15 +5314,15 @@ func (ec *executionContext) fieldContext_Mutation_setAgentActMode(ctx context.Co
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_setAgentModel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_setAgentEffort(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Mutation_setAgentModel,
+		ec.fieldContext_Mutation_setAgentEffort,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().SetAgentModel(ctx, fc.Args["beanId"].(string), fc.Args["model"].(string))
+			return ec.resolvers.Mutation().SetAgentEffort(ctx, fc.Args["beanId"].(string), fc.Args["effort"].(string))
 		},
 		nil,
 		ec.marshalNBoolean2bool,
@@ -5336,7 +5331,7 @@ func (ec *executionContext) _Mutation_setAgentModel(ctx context.Context, field g
 	)
 }
 
-func (ec *executionContext) fieldContext_Mutation_setAgentModel(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_setAgentEffort(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -5353,7 +5348,7 @@ func (ec *executionContext) fieldContext_Mutation_setAgentModel(ctx context.Cont
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_setAgentModel_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_setAgentEffort_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -6045,8 +6040,8 @@ func (ec *executionContext) fieldContext_Query_agentSession(ctx context.Context,
 				return ec.fieldContext_AgentSession_messages(ctx, field)
 			case "error":
 				return ec.fieldContext_AgentSession_error(ctx, field)
-			case "model":
-				return ec.fieldContext_AgentSession_model(ctx, field)
+			case "effort":
+				return ec.fieldContext_AgentSession_effort(ctx, field)
 			case "planMode":
 				return ec.fieldContext_AgentSession_planMode(ctx, field)
 			case "actMode":
@@ -6904,8 +6899,8 @@ func (ec *executionContext) fieldContext_Subscription_agentSessionChanged(ctx co
 				return ec.fieldContext_AgentSession_messages(ctx, field)
 			case "error":
 				return ec.fieldContext_AgentSession_error(ctx, field)
-			case "model":
-				return ec.fieldContext_AgentSession_model(ctx, field)
+			case "effort":
+				return ec.fieldContext_AgentSession_effort(ctx, field)
 			case "planMode":
 				return ec.fieldContext_AgentSession_planMode(ctx, field)
 			case "actMode":
@@ -9546,8 +9541,8 @@ func (ec *executionContext) _AgentSession(ctx context.Context, sel ast.Selection
 			}
 		case "error":
 			out.Values[i] = ec._AgentSession_error(ctx, field, obj)
-		case "model":
-			out.Values[i] = ec._AgentSession_model(ctx, field, obj)
+		case "effort":
+			out.Values[i] = ec._AgentSession_effort(ctx, field, obj)
 		case "planMode":
 			out.Values[i] = ec._AgentSession_planMode(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -10442,9 +10437,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "setAgentModel":
+		case "setAgentEffort":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_setAgentModel(ctx, field)
+				return ec._Mutation_setAgentEffort(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

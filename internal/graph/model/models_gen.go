@@ -65,8 +65,8 @@ type AgentSession struct {
 	Messages []*AgentMessage `json:"messages"`
 	// Last error message, if any
 	Error *string `json:"error,omitempty"`
-	// Claude model override (e.g. 'sonnet', 'opus', 'haiku'), null when using CLI default
-	Model *string `json:"model,omitempty"`
+	// Thinking effort level (e.g. 'low', 'medium', 'high', 'max'), null when using CLI default
+	Effort *string `json:"effort,omitempty"`
 	// Whether the agent is in plan mode (read-only)
 	PlanMode bool `json:"planMode"`
 	// Whether the agent is in act mode (fully autonomous, no permission prompts)

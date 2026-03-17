@@ -9,13 +9,13 @@
     isRunning: boolean;
     hasMessages: boolean;
     agentMode: 'plan' | 'act';
-    model: string;
+    effort: string;
     systemStatus: string | null;
     subagentActivities: SubagentActivity[];
     onSend: (message: string, images?: { data: string; mediaType: string }[]) => void;
     onStop: () => void;
     onSetMode: (mode: 'plan' | 'act') => void;
-    onSetModel: (model: string) => void;
+    onSetEffort: (effort: string) => void;
     onCompact: () => void;
     onClear: () => void;
   }
@@ -25,18 +25,16 @@
     isRunning,
     hasMessages,
     agentMode,
-    model,
+    effort,
     systemStatus,
     subagentActivities,
     onSend,
     onStop,
     onSetMode,
-    onSetModel,
+    onSetEffort,
     onCompact,
     onClear
   }: Props = $props();
-
-  const effectiveModel = $derived(model || 'sonnet');
 
   const inputStorageKey = $derived(`agent-chat-input:${beanId}`);
   let inputText = $state('');
@@ -251,47 +249,56 @@
     </div>
   {/if}
 
-  <!-- Model selector + Mode toggle + Clear -->
+  <!-- Effort level + Mode toggle + Clear -->
   <div class="flex items-center gap-3 pt-2">
     <div class={['flex', isRunning && 'pointer-events-none opacity-50']}>
       <button
-        onclick={() => onSetModel('sonnet')}
+        onclick={() => onSetEffort('low')}
         disabled={isRunning}
         class={[
           'btn-tab-sm cursor-pointer rounded-l',
-          effectiveModel === 'sonnet'
+          effort === 'low'
             ? 'border-accent/30 bg-accent/10 text-accent'
             : 'btn-tab-sm-inactive'
         ]}
       >
-        <span class="icon-[uil--bolt] size-3"></span>
-        Sonnet
+        Low
       </button>
       <button
-        onclick={() => onSetModel('opus')}
+        onclick={() => onSetEffort('medium')}
         disabled={isRunning}
         class={[
           'btn-tab-sm cursor-pointer border-l-0',
-          effectiveModel === 'opus'
+          effort === 'medium'
             ? 'border-accent/30 bg-accent/10 text-accent'
             : 'btn-tab-sm-inactive'
         ]}
       >
-        <span class="icon-[uil--star] size-3"></span>
-        Opus
+        Med
       </button>
       <button
-        onclick={() => onSetModel('haiku')}
+        onclick={() => onSetEffort('high')}
+        disabled={isRunning}
+        class={[
+          'btn-tab-sm cursor-pointer border-l-0',
+          effort === 'high' || !effort
+            ? 'border-accent/30 bg-accent/10 text-accent'
+            : 'btn-tab-sm-inactive'
+        ]}
+      >
+        High
+      </button>
+      <button
+        onclick={() => onSetEffort('max')}
         disabled={isRunning}
         class={[
           'btn-tab-sm cursor-pointer rounded-r border-l-0',
-          effectiveModel === 'haiku'
+          effort === 'max'
             ? 'border-accent/30 bg-accent/10 text-accent'
             : 'btn-tab-sm-inactive'
         ]}
       >
-        <span class="icon-[uil--wind] size-3"></span>
-        Haiku
+        Max
       </button>
     </div>
 
