@@ -338,11 +338,7 @@ Before merging, check which strategies are allowed on this repo:
   %s repo view --json mergeCommitAllowed,squashMergeAllowed,rebaseMergeAllowed
 Then pass the appropriate flag (--merge, --squash, or --rebase).
 
-Do NOT switch branches or check out main after merging — stay on the current branch.
-
-After merging:
-1. Report the merge result.
-2. Mark any associated beans as completed.`, ctx.PullRequest.URL, cli, ctx.PullRequest.Number, cli, cli)
+Do NOT switch branches or check out main after merging — stay on the current branch.`, ctx.PullRequest.URL, cli, ctx.PullRequest.Number, cli, cli)
 				}
 
 				// Update PR — push latest commits
