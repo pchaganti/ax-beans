@@ -148,10 +148,20 @@ func runServer(port int, origins []string) error {
 	portAlloc := portalloc.NewDefault()
 	portAlloc.Allocate(graph.CentralSessionID)
 
-	// Allocate ports for existing worktrees
+	// Restore persisted ports for existing worktrees (or allocate new ones)
 	if existingWTs, err := wtManager.List(); err == nil {
 		for _, wt := range existingWTs {
-			portAlloc.Allocate(wt.ID)
+			var port int
+			if savedPort := wtManager.GetPort(wt.ID); savedPort > 0 {
+				port = portAlloc.AllocateSpecific(wt.ID, savedPort)
+			} else {
+				port = portAlloc.Allocate(wt.ID)
+			}
+			// Persist the port (writes back the actual port, which may differ
+			// from the saved one if there was a conflict).
+			if err := wtManager.SavePort(wt.ID, port); err != nil {
+				log.Printf("[beans] warning: failed to save port for %s: %v", wt.ID, err)
+			}
 		}
 	}
 
